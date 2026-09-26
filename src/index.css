@@ -1,0 +1,109 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+}
+
+/* Custom industrial scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.05);
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.4);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.3);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}
+
+/* Digital Scale LED simulation styles */
+.scale-led-display {
+  font-family: 'JetBrains Mono', monospace;
+  text-shadow: 0 0 10px rgba(16, 185, 129, 0.45);
+}
+
+.scale-amber-display {
+  font-family: 'JetBrains Mono', monospace;
+  text-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
+}
+
+/* Touch friendly minimum heights for mobile buttons */
+@media (max-width: 640px) {
+  button, input, select {
+    min-height: 44px;
+  }
+}
+
+/* Root level print page setup */
+@page {
+  size: auto;
+  margin: 6mm;
+}
+
+/* =========================================================
+   PRINTING SPECIFICATION FOR WEIGHBRIDGE SLIPS & GATE PASSES
+   Supports A5 Landscape (Standard scale slip) & 80mm Thermal
+   ========================================================= */
+
+@media print {
+  /* Hide all regular web UI elements */
+  body * {
+    visibility: hidden;
+  }
+
+  .no-print,
+  nav,
+  header,
+  aside,
+  button,
+  .fab-button,
+  .scale-bar-container {
+    display: none !important;
+  }
+
+  /* Show only printable ticket modal content */
+  #printable-ticket-area,
+  #printable-ticket-area * {
+    visibility: visible;
+  }
+
+  #printable-ticket-area {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Force pure black text and high contrast borders on print */
+  #printable-ticket-area table,
+  #printable-ticket-area th,
+  #printable-ticket-area td {
+    border-color: #000 !important;
+    color: #000 !important;
+  }
+
+  /* Remove backgrounds/shadows for crisp ink printing */
+  #printable-ticket-area * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+}
