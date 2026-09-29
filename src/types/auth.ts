@@ -22,7 +22,7 @@ export interface ChucNang {
   MaChucNang: MaChucNang;
   TenChucNang: string;
   MoTa: string;
-  Nhom: string; // Grouping category (e.g. 'Nghiệp vụ vận tải', 'Trạm cân điện tử', 'Kiểm soát cổng', 'Hệ thống')
+  Nhom: string; // Grouping category ('Nghiệp vụ vận tải', 'Trạm cân điện tử', 'Kiểm soát cổng', 'Hệ thống')
 }
 
 export interface VaiTro {

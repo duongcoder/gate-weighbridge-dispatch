@@ -90,10 +90,10 @@ export const NGUOI_DUNG_LIST: NguoiDung[] = [
   },
   {
     Id: 'usr-scale',
-    TenDangNhap: 'bancan01',
+    TenDangNhap: 'operator',
     HoTen: 'Trần Thị Bàn Cân',
     VaiTroId: 'ROLE_SCALE',
-    Email: 'bancan01@weighbridge.vn',
+    Email: 'operator@weighbridge.vn',
     SoDienThoai: '0912.111.222',
     ChucVu: 'Nhân Viên Cân Điện Tử Ca 1',
     KichHoat: true,
@@ -101,10 +101,10 @@ export const NGUOI_DUNG_LIST: NguoiDung[] = [
   },
   {
     Id: 'usr-guard',
-    TenDangNhap: 'baove01',
+    TenDangNhap: 'guard',
     HoTen: 'Nguyễn Văn Cổng',
     VaiTroId: 'ROLE_GUARD',
-    Email: 'baove01@weighbridge.vn',
+    Email: 'guard@weighbridge.vn',
     SoDienThoai: '0905.333.444',
     ChucVu: 'Bảo Vệ Barrier Cổng 1',
     KichHoat: true,
@@ -112,10 +112,10 @@ export const NGUOI_DUNG_LIST: NguoiDung[] = [
   },
   {
     Id: 'usr-dispatch',
-    TenDangNhap: 'dieudo01',
+    TenDangNhap: 'dispatcher',
     HoTen: 'Phạm Điều Độ',
     VaiTroId: 'ROLE_DISPATCH',
-    Email: 'dieudo01@weighbridge.vn',
+    Email: 'dispatcher@weighbridge.vn',
     SoDienThoai: '0936.555.666',
     ChucVu: 'Chuyên Viên Điều Phối Đội Xe',
     KichHoat: true,
@@ -236,7 +236,6 @@ class AuthStoreManager {
 
   getCurrentUser(): NguoiDung {
     if (this.authMode === 'LIVE' && this.liveUserSession) {
-      // Role mapping from DB role id
       const roleIdStr = this.mapRoleIdToCode(this.liveUserSession.vaiTroId);
       return {
         Id: `db-${this.liveUserSession.id}`,

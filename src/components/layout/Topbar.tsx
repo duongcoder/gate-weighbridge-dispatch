@@ -13,14 +13,14 @@ import {
   Zap, 
   RotateCcw,
   ScanLine,
-  KeyRound,
   ChevronDown,
   Check,
   ShieldCheck,
   LogIn,
   LogOut,
   Database,
-  Radio
+  Radio,
+  Settings
 } from 'lucide-react';
 import { Authorize } from '../common/Authorize';
 
@@ -60,8 +60,7 @@ export const Topbar: React.FC<TopbarProps> = ({
     hasPermission,
     authMode,
     isAuthenticated,
-    logout,
-    setAuthMode
+    logout
   } = useAuthStore();
 
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -93,6 +92,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   const canViewCommands = hasPermission('Frm_Command', 'xem');
   const canViewVehicles = hasPermission('Frm_CardVehicle', 'xem');
   const canViewDispatch = hasPermission('Frm_DispatchOrder', 'xem');
+  const canManagePermissions = hasPermission('Frm_UserPermission', 'xem') || currentUser.VaiTroId === 'ROLE_ADMIN';
 
   // Handle switching user with active tab auto-fallback
   const handleSwitchUser = (userId: string) => {
@@ -129,7 +129,7 @@ export const Topbar: React.FC<TopbarProps> = ({
         <div className="flex items-center justify-between h-16 gap-3">
           {/* Station Title & Badge */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400/30">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400/30 shrink-0">
               <Truck className="w-5 h-5" />
             </div>
             <div>
@@ -151,26 +151,29 @@ export const Topbar: React.FC<TopbarProps> = ({
                   </span>
                 )}
               </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-2">
-                <span>GATE #01 - WEIGHBRIDGE AUTO SYSTEM</span>
-                <span className="hidden sm:inline">•</span>
-                <span className="hidden sm:inline-flex items-center gap-1 font-mono text-[11px]">
-                  <Clock className="w-3 h-3 text-slate-400" />
-                  {currentTime.toLocaleTimeString('vi-VN', { hour12: false })}
-                </span>
+              <p className="text-[11px] text-slate-500 dark:text-industrial-400 hidden sm:block">
+                Hệ thống điều phối xe & tự động hóa trạm cân công nghiệp
               </p>
             </div>
           </div>
 
-          {/* Center / Right controls */}
-          <div className="flex items-center gap-2 sm:gap-2.5">
-            {/* Quick User Switcher & Profile Badge (RBAC) */}
+          {/* Right Header Actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Real-time Clock */}
+            <div className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-medium rounded-lg bg-slate-100 dark:bg-industrial-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-industrial-700">
+              <Clock className="w-3.5 h-3.5 text-slate-400" />
+              <span>
+                {currentTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+              </span>
+            </div>
+
+            {/* User Profile Dropdown Trigger */}
             <div className="relative" ref={dropdownRef}>
               <button
                 type="button"
                 onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-industrial-700 bg-slate-50 dark:bg-industrial-800 hover:bg-slate-100 dark:hover:bg-industrial-700/80 transition shadow-sm text-left"
-                title="Tài khoản đang đăng nhập / Chuyển đổi vai trò"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-industrial-800 dark:hover:bg-industrial-700 border border-slate-200 dark:border-industrial-700 transition"
+                title="Tài khoản đang đăng nhập / Chuyển đổi vai trò & menu quản trị"
               >
                 <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs ring-1 ring-amber-500/30">
                   {currentUser.Avatar || currentUser.HoTen.charAt(0)}
@@ -191,23 +194,23 @@ export const Topbar: React.FC<TopbarProps> = ({
                 <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
               </button>
 
-              {/* User Dropdown Menu */}
+              {/* User Dropdown Menu (Tối ưu gọn gàng, chứa Ma trận Phân quyền & Đăng xuất viền đỏ) */}
               {userDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-industrial-900 rounded-xl shadow-2xl border border-slate-200 dark:border-industrial-700 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-industrial-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-industrial-700 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                   {/* Status header */}
-                  <div className="px-3 py-2 border-b border-slate-100 dark:border-industrial-800 flex items-center justify-between">
+                  <div className="px-3.5 py-2.5 border-b border-slate-100 dark:border-industrial-800 flex items-center justify-between">
                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
                       <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
                       <span>{authMode === 'LIVE' ? 'Tài Khoản SQL Server' : 'Chuyển Đổi Demo'}</span>
                     </div>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold ${authMode === 'LIVE' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${authMode === 'LIVE' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
                       {authMode === 'LIVE' ? 'LIVE DB' : 'OFFLINE'}
                     </span>
                   </div>
 
-                  {/* Demo accounts list */}
+                  {/* Quick role switches (demo) */}
                   <div className="py-1">
-                    <div className="px-3 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase">
+                    <div className="px-3.5 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase">
                       4 Vai Trò Tiêu Chuẩn:
                     </div>
                     {users.map((user) => {
@@ -218,7 +221,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                           key={user.Id}
                           type="button"
                           onClick={() => handleSwitchUser(user.Id)}
-                          className={`w-full text-left px-3 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-industrial-800 transition ${
+                          className={`w-full text-left px-3.5 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-industrial-800 transition ${
                             isCurrent && authMode === 'DEMO' ? 'bg-amber-50/60 dark:bg-amber-950/30' : ''
                           }`}
                         >
@@ -245,8 +248,44 @@ export const Topbar: React.FC<TopbarProps> = ({
                     })}
                   </div>
 
-                  {/* Bottom Action: Login / Logout */}
-                  <div className="px-2 pt-2 pb-1 border-t border-slate-100 dark:border-industrial-800">
+                  {/* System & Tools Section inside User Dropdown */}
+                  <div className="px-2 pt-2 pb-1 border-t border-slate-100 dark:border-industrial-800 space-y-1">
+                    {/* ⚙ Ma Trận Phân Quyền (Chỉ render nếu user có quyền Admin) */}
+                    {canManagePermissions && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          onOpenPermissionMatrix();
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 transition flex items-center gap-2"
+                      >
+                        <Settings className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                        <span>⚙ Ma Trận Phân Quyền (RBAC)</span>
+                      </button>
+                    )}
+
+                    {/* Quét Thẻ RFID (F2) shortcut option inside dropdown */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserDropdownOpen(false);
+                        onOpenRfidSimulator();
+                      }}
+                      className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-industrial-800 transition flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ScanLine className="w-4 h-4 text-amber-500" />
+                        <span>Quét Thẻ RFID</span>
+                      </div>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-industrial-700 text-slate-600 dark:text-slate-400">
+                        F2
+                      </span>
+                    </button>
+                  </div>
+
+                  {/* Bottom Action: Đăng Xuất Viền Đỏ ở dưới đáy dropdown */}
+                  <div className="px-2 pt-2 pb-1.5 border-t border-slate-100 dark:border-industrial-800">
                     {isAuthenticated ? (
                       <button
                         type="button"
@@ -254,10 +293,10 @@ export const Topbar: React.FC<TopbarProps> = ({
                           setUserDropdownOpen(false);
                           logout();
                         }}
-                        className="w-full py-1.5 px-3 text-xs font-semibold rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 transition flex items-center justify-center gap-1.5"
+                        className="w-full py-2 px-3 text-xs font-bold rounded-xl border border-rose-400 dark:border-rose-700 bg-rose-50/80 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 transition flex items-center justify-center gap-2 shadow-sm"
                       >
-                        <LogOut className="w-3.5 h-3.5" />
-                        <span>Đăng xuất SQL Server</span>
+                        <LogOut className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                        <span>Đăng Xuất</span>
                       </button>
                     ) : (
                       <button
@@ -266,10 +305,10 @@ export const Topbar: React.FC<TopbarProps> = ({
                           setUserDropdownOpen(false);
                           onOpenLogin();
                         }}
-                        className="w-full py-1.5 px-3 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition flex items-center justify-center gap-1.5 shadow-sm"
+                        className="w-full py-2 px-3 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white transition flex items-center justify-center gap-2 shadow-sm"
                       >
                         <LogIn className="w-3.5 h-3.5" />
-                        <span>Đăng nhập tài khoản thật</span>
+                        <span>Đăng Nhập SQL Server</span>
                       </button>
                     )}
                   </div>
@@ -277,52 +316,16 @@ export const Topbar: React.FC<TopbarProps> = ({
               )}
             </div>
 
-            {/* Direct Login / Logout Header Button */}
-            {isAuthenticated ? (
-              <button
-                type="button"
-                onClick={logout}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-rose-50 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-900 border border-rose-300 dark:border-rose-800 transition shadow-sm"
-                title="Đăng xuất khỏi phiên làm việc SQL Server"
-              >
-                <LogOut className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                <span className="hidden sm:inline">Đăng Xuất</span>
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onOpenLogin}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-300 dark:border-emerald-800 transition shadow-sm"
-                title="Đăng nhập tài khoản SQL Server qua JWT"
-              >
-                <LogIn className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span className="hidden sm:inline">Đăng Nhập</span>
-              </button>
-            )}
-
-            {/* Permission Matrix Button (Admin only) */}
-            <Authorize form="Frm_UserPermission" action="xem">
-              <button
-                type="button"
-                onClick={onOpenPermissionMatrix}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900 border border-emerald-300 dark:border-emerald-800 transition shadow-sm"
-                title="Quản trị ma trận phân quyền RBAC"
-              >
-                <KeyRound className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                <span className="hidden md:inline">Phân Quyền</span>
-              </button>
-            </Authorize>
-
-            {/* RFID Scanner Simulator trigger button */}
+            {/* RFID Scanner button (Ẩn trên màn hình nhỏ/vừa, chỉ hiện trên màn hình rất lớn xl+) */}
             <Authorize form="Frm_QuickCheckin" action="them" fallback={null}>
               <button
                 type="button"
                 onClick={onOpenRfidSimulator}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-industrial-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-industrial-700 border border-slate-200 dark:border-industrial-700 transition shadow-sm"
+                className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-industrial-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-industrial-700 border border-slate-200 dark:border-industrial-700 transition shadow-sm"
                 title="Mô phỏng quét thẻ RFID / Barcode (Phím tắt F2)"
               >
                 <ScanLine className="w-4 h-4 text-amber-500" />
-                <span className="hidden xl:inline">Quét RFID (F2)</span>
+                <span>Quét RFID (F2)</span>
               </button>
             </Authorize>
 
@@ -331,7 +334,7 @@ export const Topbar: React.FC<TopbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenQuickCheckin}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-md shadow-amber-600/20 active:scale-95 transition"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-bold rounded-lg bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white shadow-md shadow-amber-600/20 active:scale-95 transition shrink-0"
               >
                 <Zap className="w-4 h-4 fill-white" />
                 <span>Khai Báo Nhanh</span>
@@ -379,7 +382,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 }`}
               >
                 <FileText className="w-4 h-4" />
-                <span>📋 QUẢN LÝ LỆNH</span>
+                <span>QUẢN LÝ LỆNH</span>
                 <span className="ml-1 text-[11px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-industrial-700 font-mono">
                   {commands.length}
                 </span>
@@ -397,7 +400,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 }`}
               >
                 <CreditCard className="w-4 h-4" />
-                <span>💳 THẺ & XE</span>
+                <span>THẺ & XE</span>
                 <span className="ml-1 text-[11px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-industrial-700 font-mono">
                   {vehicles.length}
                 </span>
@@ -415,7 +418,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                 }`}
               >
                 <Share2 className="w-4 h-4" />
-                <span>🔗 ĐIỀU PHỐI GHÉP LỆNH</span>
+                <span>ĐIỀU PHỐI GHÉP LỆNH</span>
                 {activeTripsCount > 0 && (
                   <span className="ml-1 text-[11px] px-1.5 py-0.2 rounded-full bg-amber-500 text-white font-mono font-bold animate-pulse">
                     {activeTripsCount} Xe

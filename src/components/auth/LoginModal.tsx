@@ -52,7 +52,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         tenDangNhap: tenDangNhap.trim(),
         matKhau: matKhau.trim(),
       });
-      setSuccessMessage(`Đăng nhập thành công! Chào mừng ${res.userSession.hoTen}`);
+      // Chuẩn hóa fallback: Đăng nhập thành công! Chào mừng ${user.hoTen}
+      const displayName = res.userSession?.hoTen || res.userSession?.tenDangNhap || tenDangNhap;
+      setSuccessMessage(`Đăng nhập thành công! Chào mừng ${displayName}`);
       setTimeout(() => {
         setLoading(false);
         onLoginSuccess?.();
@@ -61,7 +63,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     } catch (err: unknown) {
       setLoading(false);
       const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg = errorObj.response?.data?.message || errorObj.message || 'Đăng nhập thất bại. Kiểm tra kết nối SQL Server & API.';
+      const msg = errorObj.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại tài khoản hoặc kết nối máy chủ SQL Server.';
       setErrorMessage(msg);
     }
   };
@@ -73,22 +75,22 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
-      <div 
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div
         className="w-full max-w-md bg-white dark:bg-industrial-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-industrial-700 overflow-hidden animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-amber-600 to-amber-700 text-white">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-white/10 backdrop-blur">
-              <ShieldCheck className="w-5 h-5 text-amber-200" />
+        {/* Header: Đồng bộ phong cách Gradient xanh công nghiệp slate-900 cao cấp */}
+        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white border-b border-slate-700/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-amber-400">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black tracking-tight uppercase">Đăng Nhập Hệ Thống</h3>
-              <p className="text-[11px] text-amber-100 flex items-center gap-1">
-                <Server className="w-3 h-3" />
+              <h3 className="text-base font-black tracking-tight uppercase">ĐĂNG NHẬP HỆ THỐNG</h3>
+              <p className="text-[11px] text-slate-300 flex items-center gap-1.5 mt-0.5">
+                <Server className="w-3 h-3 text-emerald-400" />
                 <span>Xác thực SQL Server & JWT Token</span>
               </p>
             </div>
@@ -96,7 +98,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition"
+            className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition"
           >
             <X className="w-5 h-5" />
           </button>
@@ -178,28 +180,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               <button
                 type="button"
                 onClick={() => handleQuickFill('admin')}
-                className="px-2 py-1 text-xs font-mono rounded bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
+                className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
               >
                 👑 <b>admin</b> (Quản trị)
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickFill('operator')}
-                className="px-2 py-1 text-xs font-mono rounded bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
+                className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
               >
                 ⚖️ <b>operator</b> (Bàn cân)
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickFill('guard')}
-                className="px-2 py-1 text-xs font-mono rounded bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
+                className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
               >
                 🛡️ <b>guard</b> (Bảo vệ)
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickFill('dispatcher')}
-                className="px-2 py-1 text-xs font-mono rounded bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
+                className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
               >
                 🚚 <b>dispatcher</b> (Điều độ)
               </button>

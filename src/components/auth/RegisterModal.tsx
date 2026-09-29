@@ -11,7 +11,9 @@ import {
   Phone,
   Mail,
   Building,
-  KeyRound
+  KeyRound,
+  ShieldCheck,
+  Server
 } from 'lucide-react';
 
 interface RegisterModalProps {
@@ -75,60 +77,61 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     setSuccessMessage(null);
 
     try {
-      await register({
+      const res = await register({
         tenDangNhap: formData.tenDangNhap.trim(),
         matKhau: formData.matKhau,
         hoTen: formData.hoTen.trim(),
-        dienThoai: formData.dienThoai.trim(),
-        email: formData.email.trim(),
-        diaChi: formData.diaChi.trim(),
+        dienThoai: formData.dienThoai.trim() || undefined,
+        email: formData.email.trim() || undefined,
+        diaChi: formData.diaChi.trim() || undefined,
         gateId: formData.gateId,
       });
 
-      setSuccessMessage('Đăng ký thành công! Đang tự động đăng nhập vào trạm...');
+      setSuccessMessage(`Đăng ký thành công! Chào mừng ${res.userSession.hoTen}`);
       setTimeout(() => {
         setLoading(false);
         onClose();
-      }, 1000);
+      }, 900);
     } catch (err: unknown) {
       setLoading(false);
       const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
-      const msg = errorObj.response?.data?.message || errorObj.message || 'Đăng ký thất bại. Vui lòng thử lại.';
+      const msg = errorObj.response?.data?.message || 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin hoặc kết nối máy chủ.';
       setErrorMessage(msg);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-150">
-      <div 
-        className="w-full max-w-lg bg-white dark:bg-industrial-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-industrial-700 overflow-hidden animate-in zoom-in-95 duration-200 max-h-[90vh] flex flex-col"
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+      <div
+        className="w-full max-w-lg bg-white dark:bg-industrial-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-industrial-700 overflow-hidden animate-in zoom-in-95 duration-200"
         role="dialog"
         aria-modal="true"
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-white/10 backdrop-blur">
-              <UserPlus className="w-5 h-5 text-emerald-200" />
+        {/* Header: Đồng bộ phong cách Gradient xanh công nghiệp slate-900 cao cấp */}
+        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white border-b border-slate-700/50">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-emerald-400">
+              <ShieldCheck className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-black tracking-tight uppercase">Đăng Ký Tài Khoản Trạm</h3>
-              <p className="text-[11px] text-emerald-100">
-                Tài xế, nhân viên bảo vệ & điều phối cổng
+              <h3 className="text-base font-black tracking-tight uppercase">ĐĂNG KÝ TÀI KHOẢN MỚI</h3>
+              <p className="text-[11px] text-slate-300 flex items-center gap-1.5 mt-0.5">
+                <Server className="w-3 h-3 text-emerald-400" />
+                <span>Cấp phát tài khoản lái xe / nhân viên cổng vào SQL Server</span>
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-white/80 hover:text-white hover:bg-white/10 transition"
+            className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Form Body with Scroll */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-3.5 overflow-y-auto flex-1">
+        {/* Body Form */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-3.5 max-h-[80vh] overflow-y-auto">
           {/* Error Message */}
           {errorMessage && (
             <div className="p-3 text-xs rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-start gap-2">
@@ -159,7 +162,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   name="tenDangNhap"
                   value={formData.tenDangNhap}
                   onChange={handleChange}
-                  placeholder="Ví dụ: taixe_nguyenan"
+                  placeholder="taixe_79c12345"
                   className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-industrial-950 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>

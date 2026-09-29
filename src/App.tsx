@@ -75,14 +75,14 @@ export function App() {
   const [activeTicketTrip, setActiveTicketTrip] = useState<OrderTrip | null>(null);
   const [attachVehicleOrderId, setAttachVehicleOrderId] = useState<string | null>(null);
 
-  // Global toast notification
+  // Global toast notification (Auto-dismiss 3s, Bottom-Right)
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => {
       setToastMessage(null);
-    }, 4000);
+    }, 3000); // Tự động biến mất sau đúng 3 giây
   };
 
   // -------------------------------------------------------------
@@ -118,7 +118,6 @@ export function App() {
       const matched = findVehicleByCardOrPlate(code);
       if (matched) {
         showToast(`⚡ ĐÃ NHẬN DIỆN THẺ RFID: ${matched.cardNo} (Xe ${matched.plateNumber})`);
-        // If vehicle has active trip, open weighing or show details
         if (matched.activeTripId) {
           const t = trips.find((item) => item.id === matched.activeTripId);
           if (t && (t.step === 'SCALE_1' || t.step === 'SCALE_2')) {
@@ -126,7 +125,6 @@ export function App() {
             return;
           }
         }
-        // Otherwise switch to vehicles tab and highlight
         if (hasPermission('Frm_CardVehicle', 'xem')) {
           setActiveTab('VEHICLES');
         }
@@ -143,7 +141,7 @@ export function App() {
   });
 
   // -------------------------------------------------------------
-  // OPERATIONAL REQUIREMENT: KEYBOARD SHORTCUTS GUARD (F2, F3)
+  // OPERATIONAL REQUIREMENT: KEYBOARD SHORTCUTS GUARD
   // F3: Only if hasPermission('Frm_DispatchOrder', 'them')
   // F2: Only if hasPermission('Frm_QuickCheckin', 'them') || hasPermission('Frm_CardVehicle', 'them')
   // -------------------------------------------------------------
@@ -209,14 +207,15 @@ export function App() {
       {/* 2. Live Weighbridge Digital Scale Indicator Bar */}
       <ScaleIndicator />
 
-      {/* 3. Global Floating Toast Banner */}
+      {/* 3. Global Floating Toast Banner (Cố định ở Bottom-Right, auto-dismiss 3s, không che Topbar) */}
       {toastMessage && (
-        <div className="fixed top-28 right-4 z-50 bg-amber-500 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-xl flex items-center gap-2 animate-in slide-in-from-top-4">
-          <span>{toastMessage}</span>
+        <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 dark:bg-industrial-800/95 text-white font-medium text-xs sm:text-sm px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/80 dark:border-industrial-600 flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-200 max-w-md">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+          <span className="flex-1 leading-snug">{toastMessage}</span>
           <button
             type="button"
             onClick={() => setToastMessage(null)}
-            className="ml-2 hover:opacity-80"
+            className="text-slate-400 hover:text-white transition p-1"
           >
             ✕
           </button>
