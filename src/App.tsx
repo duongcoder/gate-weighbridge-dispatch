@@ -32,6 +32,10 @@ import { QuickCheckinModal } from './components/quickCheckin/QuickCheckinModal';
 // RBAC Permission Matrix Modal
 import { PermissionMatrixModal } from './components/admin/PermissionMatrixModal';
 
+// Real Database Auth Modals
+import { LoginModal } from './components/auth/LoginModal';
+import { RegisterModal } from './components/auth/RegisterModal';
+
 export function App() {
   const { 
     activeTab, 
@@ -46,7 +50,7 @@ export function App() {
     findVehicleByCardOrPlate 
   } = useStore();
 
-  const { currentUser, hasPermission } = useAuthStore();
+  const { currentUser, hasPermission, initAuthFromToken } = useAuthStore();
 
   // Modal visibility states
   const [commandModalOpen, setCommandModalOpen] = useState(false);
@@ -58,6 +62,10 @@ export function App() {
   const [rfidSimModalOpen, setRfidSimModalOpen] = useState(false);
   const [quickCheckinOpen, setQuickCheckinOpen] = useState(false);
   const [permissionMatrixOpen, setPermissionMatrixOpen] = useState(false);
+
+  // Real Database Authentication Modals
+  const [loginModalOpen, setLoginModalOpen] = useState(false);
+  const [registerModalOpen, setRegisterModalOpen] = useState(false);
 
   const [dispatchWizardOpen, setDispatchWizardOpen] = useState(false);
   const [preselectedCmdId, setPreselectedCmdId] = useState<string | null>(null);
@@ -76,6 +84,17 @@ export function App() {
       setToastMessage(null);
     }, 4000);
   };
+
+  // -------------------------------------------------------------
+  // OPERATIONAL REQUIREMENT: INITIALIZE AUTH FROM TOKEN ON STARTUP
+  // -------------------------------------------------------------
+  useEffect(() => {
+    initAuthFromToken().then((restored) => {
+      if (restored) {
+        showToast('🔒 Đã khôi phục phiên đăng nhập SQL Server!');
+      }
+    });
+  }, [initAuthFromToken]);
 
   // -------------------------------------------------------------
   // OPERATIONAL REQUIREMENT: ACTIVE TAB AUTO-FALLBACK ON USER SWITCH
@@ -184,6 +203,7 @@ export function App() {
         onOpenQuickCheckin={() => setQuickCheckinOpen(true)}
         onOpenRfidSimulator={() => setRfidSimModalOpen(true)}
         onOpenPermissionMatrix={() => setPermissionMatrixOpen(true)}
+        onOpenLogin={() => setLoginModalOpen(true)}
       />
 
       {/* 2. Live Weighbridge Digital Scale Indicator Bar */}
@@ -258,6 +278,20 @@ export function App() {
           APPLICATION MODALS
           ========================================================================= */}
       
+      {/* Real Database Authentication Modals */}
+      <LoginModal
+        isOpen={loginModalOpen}
+        onClose={() => setLoginModalOpen(false)}
+        onOpenRegister={() => setRegisterModalOpen(true)}
+        onLoginSuccess={() => showToast('🎉 Đăng nhập thành công với quyền hạn cơ sở dữ liệu!')}
+      />
+
+      <RegisterModal
+        isOpen={registerModalOpen}
+        onClose={() => setRegisterModalOpen(false)}
+        onOpenLogin={() => setLoginModalOpen(true)}
+      />
+
       {/* Command Modal */}
       <CommandModal
         isOpen={commandModalOpen}
