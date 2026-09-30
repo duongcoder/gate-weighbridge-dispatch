@@ -14,12 +14,10 @@ import {
   RotateCcw,
   ScanLine,
   ChevronDown,
-  ShieldCheck,
   LogIn,
   LogOut,
   Users,
   Settings,
-  Building
 } from 'lucide-react';
 import { Authorize } from '../common/Authorize';
 
@@ -185,24 +183,11 @@ export const Topbar: React.FC<TopbarProps> = ({
                 <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-industrial-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-industrial-700 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
                   {/* Account Header Information */}
                   <div className="px-4 py-3 border-b border-slate-100 dark:border-industrial-800">
-                    <div className="flex items-center justify-between mb-1.5">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>Tài Khoản SQL Server</span>
-                      </span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
-                        LIVE DB
-                      </span>
-                    </div>
                     <div className="text-sm font-black text-slate-800 dark:text-white">
                       {currentUser.HoTen}
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                       Tên đăng nhập: <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">@{currentUser.TenDangNhap}</span>
-                    </div>
-                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
-                      <Building className="w-3 h-3 text-amber-500" />
-                      <span>Cổng trực mặc định: Cổng {liveUserSession?.gateId || 1}</span>
                     </div>
                   </div>
 
@@ -223,7 +208,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                       </button>
                     )}
 
-                    {/* ⚙ Ma Trận Phân Quyền (Admin only) */}
+                    {/* ⚙ Phân Quyền (Admin only) */}
                     {isAdmin && (
                       <button
                         type="button"
@@ -234,7 +219,7 @@ export const Topbar: React.FC<TopbarProps> = ({
                         className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 transition flex items-center gap-2.5"
                       >
                         <Settings className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                        <span>⚙ Ma Trận Phân Quyền (RBAC)</span>
+                        <span>⚙ Phân Quyền</span>
                       </button>
                     )}
 

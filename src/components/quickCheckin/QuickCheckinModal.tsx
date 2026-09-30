@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store/dispatchStore';
 import { Modal } from '../common/Modal';
-import { Zap, CheckCircle2, Truck, CreditCard, ArrowRight } from 'lucide-react';
-import { formatWeight } from '../../utils/formatters';
+import { Zap, CheckCircle2, ArrowRight } from 'lucide-react';
 import { soundFx } from '../../utils/audio';
 
 interface QuickCheckinModalProps {
@@ -15,7 +14,6 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
   onClose,
 }) => {
   const { 
-    vehicles, 
     commands, 
     findVehicleByCardOrPlate, 
     addVehicle, 
@@ -106,10 +104,9 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
       title={
         <div className="flex items-center gap-2">
           <Zap className="w-5 h-5 text-amber-500 fill-amber-500" />
-          <span>Khai Báo Nhanh Qua Cổng (Quick Check-in)</span>
+          <span>Khai Báo Nhanh</span>
         </div>
       }
-      subtitle="Dành cho tài xế quét mã tại Barrier hoặc nhân viên trạm tạo lốt nhanh"
       maxWidth="md"
     >
       {isSuccess ? (
@@ -179,7 +176,7 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
           {/* Target Command Selection */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-              Chọn Lệnh Vận Chuyển / Nghiệp Vụ
+              CHỌN LỆNH
             </label>
             <select
               value={selectedCommandId}
@@ -253,7 +250,7 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
               className="flex items-center gap-2 px-5 py-2.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 active:scale-95 rounded-lg shadow transition"
             >
               <Zap className="w-4 h-4 fill-white" />
-              <span>Xác Nhận & Cấp Lốt Vào Cổng</span>
+              <span>Xác Nhận</span>
             </button>
           </div>
         </form>
