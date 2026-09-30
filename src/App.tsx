@@ -37,7 +37,6 @@ import { UserManagementModal } from './components/admin/UserManagementModal';
 
 // Real Database Auth Modals
 import { LoginModal } from './components/auth/LoginModal';
-import { RegisterModal } from './components/auth/RegisterModal';
 
 export function App() {
   const { 
@@ -69,7 +68,6 @@ export function App() {
 
   // Real Database Authentication Modals
   const [loginModalOpen, setLoginModalOpen] = useState(false);
-  const [registerModalOpen, setRegisterModalOpen] = useState(false);
 
   const [dispatchWizardOpen, setDispatchWizardOpen] = useState(false);
   const [preselectedCmdId, setPreselectedCmdId] = useState<string | null>(null);
@@ -323,18 +321,11 @@ export function App() {
           APPLICATION MODALS
           ========================================================================= */}
       
-      {/* Real Database Authentication Modals */}
+      {/* Real Database Authentication Modal (Admin centrally issues accounts) */}
       <LoginModal
         isOpen={loginModalOpen}
         onClose={() => setLoginModalOpen(false)}
-        onOpenRegister={() => setRegisterModalOpen(true)}
         onLoginSuccess={() => showToast('🎉 Đăng nhập thành công với quyền hạn cơ sở dữ liệu!')}
-      />
-
-      <RegisterModal
-        isOpen={registerModalOpen}
-        onClose={() => setRegisterModalOpen(false)}
-        onOpenLogin={() => setLoginModalOpen(true)}
       />
 
       {/* User Management Admin Modal */}

@@ -14,14 +14,12 @@ import {
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onOpenRegister: () => void;
   onLoginSuccess?: () => void;
 }
 
 export const LoginModal: React.FC<LoginModalProps> = ({
   isOpen,
   onClose,
-  onOpenRegister,
   onLoginSuccess,
 }) => {
   const { login } = useAuthStore();
@@ -177,21 +175,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               </>
             )}
           </button>
-
-          {/* Switch to Register */}
-          <div className="text-center pt-1 text-xs text-slate-500 dark:text-slate-400">
-            <span>Chưa có tài khoản? </span>
-            <button
-              type="button"
-              onClick={() => {
-                onClose();
-                onOpenRegister();
-              }}
-              className="text-amber-600 dark:text-amber-400 font-bold hover:underline"
-            >
-              Đăng ký
-            </button>
-          </div>
         </form>
       </div>
     </div>

@@ -156,7 +156,13 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
     }
   };
 
-  const selectedRole = roles.find((r) => r.Id === selectedRoleId);
+  // Chỉ hiển thị đúng 3 vai trò: Quản Trị Viên (Admin), Nhân Viên Bàn Cân, Bảo Vệ
+  const targetRoleIds = ['ROLE_ADMIN', 'ROLE_SCALE', 'ROLE_GUARD'];
+  const displayedRoles = targetRoleIds
+    .map((id) => roles.find((r) => r.Id === id))
+    .filter((r): r is NonNullable<typeof r> => !!r);
+
+  const selectedRole = displayedRoles.find((r) => r.Id === selectedRoleId) || displayedRoles[0];
 
   return (
     <Modal
@@ -164,18 +170,17 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
       onClose={onClose}
       title={
         <div className="flex items-center gap-2">
-          <KeyRound className="w-5 h-5 text-amber-500" />
-          <span>Quản Trị Ma Trận Phân Quyền (RBAC Matrix)</span>
+          <KeyRound className="w-5 h-5 text-amber-500 shrink-0" />
+          <span>Quản Trị Phân Quyền</span>
         </div>
       }
-      subtitle="Thiết lập quyền Xem, Thêm, Sửa, Xóa, Báo cáo theo chuẩn bảng PhanQuyen SQL Server"
       maxWidth="4xl"
     >
       <div className="space-y-4">
         {/* Role Selector Tabs */}
         <div className="flex flex-wrap items-center justify-between gap-3 bg-slate-100 dark:bg-industrial-950 p-2 rounded-xl border border-slate-200 dark:border-industrial-800">
           <div className="flex items-center gap-1.5 overflow-x-auto">
-            {roles.map((role) => (
+            {displayedRoles.map((role) => (
               <button
                 key={role.Id}
                 type="button"
@@ -209,9 +214,11 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
             <span className="font-bold text-amber-900 dark:text-amber-200">
               Đang phân quyền cho: <b>{selectedRole?.TenVaiTro}</b>
             </span>
-            <p className="text-slate-600 dark:text-slate-400 text-[11px] mt-0.5">
-              {selectedRole?.MoTa}
-            </p>
+            {selectedRoleId === 'ROLE_ADMIN' && (
+              <p className="text-slate-600 dark:text-slate-400 text-[11px] mt-0.5">
+                Toàn quyền cấu hình, vận hành và quản trị phân quyền hệ thống
+              </p>
+            )}
           </div>
           {savedSuccess && (
             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 rounded-md animate-in fade-in">
@@ -383,7 +390,7 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
         {/* Footer actions */}
         <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-industrial-800">
           <span className="text-[11px] text-slate-500">
-            * Thay đổi có hiệu lực ngay lập tức cho phiên làm việc hiện tại và lưu vào SQL Server
+            * Thay đổi có hiệu lực ngay lập tức sau khi lưu
           </span>
 
           <div className="flex items-center gap-2">

@@ -91,6 +91,16 @@ export interface CreateUserDto {
   diaChi?: string;
 }
 
+export interface UpdateUserDto {
+  hoTen: string;
+  vaiTroId: number;
+  dienThoai?: string;
+  email?: string;
+  matKhau?: string;
+  gate_Id?: number;
+  diaChi?: string;
+}
+
 export const authApi = {
   login: async (credentials: LoginDto): Promise<AuthResponseDto> => {
     const response = await api.post<AuthResponseDto>('/auth/login', credentials);
@@ -130,6 +140,11 @@ export const authApi = {
 
   createUser: async (data: CreateUserDto): Promise<UserListItemDto> => {
     const response = await api.post<UserListItemDto>('/users/create', data);
+    return response.data;
+  },
+
+  updateUser: async (id: number, data: UpdateUserDto): Promise<UserListItemDto> => {
+    const response = await api.put<UserListItemDto>(`/users/${id}`, data);
     return response.data;
   },
 

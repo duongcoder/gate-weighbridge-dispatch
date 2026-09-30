@@ -3,24 +3,24 @@ import {
   authApi, 
   UserListItemDto, 
   CreateUserDto, 
+  UpdateUserDto,
   RoleDto 
 } from '../../services/authApi';
 import { 
   Users, 
   UserPlus, 
   Trash2, 
+  Pencil,
+  Save,
   X, 
   AlertCircle, 
   CheckCircle2, 
   Loader2, 
   Phone, 
-  Building, 
   KeyRound, 
   Lock, 
   User, 
   RefreshCw,
-  ShieldCheck,
-  Calendar
 } from 'lucide-react';
 
 interface UserManagementModalProps {
@@ -35,8 +35,11 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
   const [users, setUsers] = useState<UserListItemDto[]>([]);
   const [roles, setRoles] = useState<RoleDto[]>([]);
   const [loading, setLoading] = useState(false);
-  const [creating, setCreating] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+
+  // Edit mode state: null = Create mode, UserListItemDto = Edit mode
+  const [editingUser, setEditingUser] = useState<UserListItemDto | null>(null);
 
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -77,6 +80,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
       fetchData();
       setErrorMessage(null);
       setSuccessMessage(null);
+      handleCancelEdit();
     }
   }, [isOpen]);
 
@@ -86,40 +90,107 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'vaiTroId' || name === 'gate_Id' ? Number(value) : value,
+      [name]: name === 'vaiTroId' ? Number(value) : value,
     }));
   };
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.tenDangNhap.trim() || !formData.matKhau.trim() || !formData.hoTen.trim()) {
-      setErrorMessage('Vui lòng điền đầy đủ Tên đăng nhập, Mật khẩu và Họ tên.');
-      return;
-    }
-
-    setCreating(true);
+  const handleStartEdit = (user: UserListItemDto) => {
+    setEditingUser(user);
+    setFormData({
+      tenDangNhap: user.tenDangNhap,
+      matKhau: '', // Để trống khi sửa, chỉ nhập nếu muốn đổi mật khẩu
+      hoTen: user.hoTen,
+      vaiTroId: user.vaiTroId || 2,
+      gate_Id: user.gate_Id || 1,
+      dienThoai: user.dienThoai || '',
+      diaChi: user.diaChi || '',
+    });
     setErrorMessage(null);
     setSuccessMessage(null);
+  };
 
-    try {
-      const created = await authApi.createUser(formData);
-      setSuccessMessage(`Đã tạo thành công tài khoản: @${created.tenDangNhap} (${created.hoTen})`);
-      setUsers((prev) => [...prev, created]);
-      // Reset form
-      setFormData({
-        tenDangNhap: '',
-        matKhau: '123',
-        hoTen: '',
-        vaiTroId: roles.length > 1 ? roles[1].id : 2,
-        gate_Id: 1,
-        dienThoai: '',
-        diaChi: '',
-      });
-    } catch (err: unknown) {
-      const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
-      setErrorMessage(errorObj.response?.data?.message || 'Lỗi khi tạo tài khoản mới.');
-    } finally {
-      setCreating(false);
+  const handleCancelEdit = () => {
+    setEditingUser(null);
+    setFormData({
+      tenDangNhap: '',
+      matKhau: '123',
+      hoTen: '',
+      vaiTroId: roles.length > 1 ? roles[1].id : 2,
+      gate_Id: 1,
+      dienThoai: '',
+      diaChi: '',
+    });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (editingUser) {
+      // --------------------------------------------------
+      // CHẾ ĐỘ CẬP NHẬT (EDIT MODE)
+      // --------------------------------------------------
+      if (!formData.hoTen.trim()) {
+        setErrorMessage('Vui lòng điền Họ và tên.');
+        return;
+      }
+
+      setSubmitting(true);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      try {
+        const payload: UpdateUserDto = {
+          hoTen: formData.hoTen.trim(),
+          vaiTroId: Number(formData.vaiTroId) || 2,
+          dienThoai: formData.dienThoai?.trim() || undefined,
+          matKhau: formData.matKhau?.trim() || undefined,
+          gate_Id: 1,
+          diaChi: '',
+        };
+
+        const updated = await authApi.updateUser(editingUser.id, payload);
+        setSuccessMessage(`Đã cập nhật thông tin tài khoản @${updated.tenDangNhap} thành công!`);
+        setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
+        handleCancelEdit();
+      } catch (err: unknown) {
+        const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+        setErrorMessage(errorObj.response?.data?.message || 'Lỗi khi cập nhật tài khoản.');
+      } finally {
+        setSubmitting(false);
+      }
+    } else {
+      // --------------------------------------------------
+      // CHẾ ĐỘ TẠO MỚI (CREATE MODE)
+      // --------------------------------------------------
+      if (!formData.tenDangNhap.trim() || !formData.matKhau.trim() || !formData.hoTen.trim()) {
+        setErrorMessage('Vui lòng điền đầy đủ Tên đăng nhập, Mật khẩu và Họ tên.');
+        return;
+      }
+
+      setSubmitting(true);
+      setErrorMessage(null);
+      setSuccessMessage(null);
+
+      try {
+        const payload: CreateUserDto = {
+          tenDangNhap: formData.tenDangNhap.trim(),
+          matKhau: formData.matKhau.trim(),
+          hoTen: formData.hoTen.trim(),
+          vaiTroId: Number(formData.vaiTroId) || 2,
+          gate_Id: 1,
+          dienThoai: formData.dienThoai?.trim() || undefined,
+          diaChi: '',
+        };
+        const created = await authApi.createUser(payload);
+        setSuccessMessage(`Đã tạo thành công tài khoản: @${created.tenDangNhap} (${created.hoTen})`);
+        setUsers((prev) => [...prev, created]);
+        handleCancelEdit();
+      } catch (err: unknown) {
+        const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
+        setErrorMessage(errorObj.response?.data?.message || 'Lỗi khi tạo tài khoản mới.');
+      } finally {
+        setSubmitting(false);
+      }
     }
   };
 
@@ -129,7 +200,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
       return;
     }
 
-    if (!window.confirm(`Xác nhận xóa tài khoản "${user.tenDangNhap}" (${user.hoTen}) khỏi cơ sở dữ liệu SQL Server?`)) {
+    if (!window.confirm(`Xác nhận xóa tài khoản "${user.tenDangNhap}" (${user.hoTen}) khỏi hệ thống?`)) {
       return;
     }
 
@@ -141,6 +212,9 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
       await authApi.deleteUser(user.id);
       setSuccessMessage(`Đã xóa tài khoản @${user.tenDangNhap} thành công!`);
       setUsers((prev) => prev.filter((u) => u.id !== user.id));
+      if (editingUser?.id === user.id) {
+        handleCancelEdit();
+      }
     } catch (err: unknown) {
       const errorObj = err as { response?: { data?: { message?: string } }; message?: string };
       setErrorMessage(errorObj.response?.data?.message || 'Lỗi khi xóa người dùng.');
@@ -169,13 +243,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
             <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-amber-400">
               <Users className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-black tracking-tight uppercase">QUẢN LÝ TÀI KHOẢN HỆ THỐNG</h3>
-              <p className="text-[11px] text-slate-300 flex items-center gap-1.5 mt-0.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Thêm mới, phân vai trò và quản trị người dùng cơ sở dữ liệu SQL Server</span>
-              </p>
-            </div>
+            <h3 className="text-base font-black tracking-tight uppercase">QUẢN LÝ TÀI KHOẢN HỆ THỐNG</h3>
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -197,7 +265,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
           </div>
         </div>
 
-        {/* Content Body: Scrollable area with Add User Form + User Table */}
+        {/* Content Body: Scrollable area with Form + User Table */}
         <div className="p-6 overflow-y-auto space-y-6">
           {/* Alerts */}
           {errorMessage && (
@@ -214,49 +282,84 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
             </div>
           )}
 
-          {/* Section 1: Form Thêm Tài Khoản Mới */}
-          <div className="bg-slate-50 dark:bg-industrial-950/80 rounded-2xl border border-slate-200 dark:border-industrial-800 p-5 shadow-xs">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200 mb-4 pb-2 border-b border-slate-200 dark:border-industrial-800">
-              <UserPlus className="w-4 h-4 text-amber-500" />
-              <span>Tạo Mới Tài Khoản Người Dùng</span>
+          {/* Section 1: Form Thêm / Cập Nhật Tài Khoản */}
+          <div className={`rounded-2xl border p-5 shadow-xs transition-colors ${
+            editingUser 
+              ? 'bg-sky-50/60 dark:bg-sky-950/20 border-sky-300 dark:border-sky-800' 
+              : 'bg-slate-50 dark:bg-industrial-950/80 border-slate-200 dark:border-industrial-800'
+          }`}>
+            <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-200/80 dark:border-industrial-800">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                {editingUser ? (
+                  <>
+                    <Pencil className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                    <span>CẬP NHẬT THÔNG TIN TÀI KHOẢN: <span className="text-sky-600 dark:text-sky-400 font-mono">@{editingUser.tenDangNhap}</span></span>
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4 text-amber-500" />
+                    <span>Tạo Mới Tài Khoản Người Dùng</span>
+                  </>
+                )}
+              </div>
+
+              {editingUser && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="text-xs font-bold text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 flex items-center gap-1 transition"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  <span>Hủy Chỉnh Sửa</span>
+                </button>
+              )}
             </div>
 
-            <form onSubmit={handleCreateUser} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3.5">
                 {/* Tên đăng nhập */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Tên Đăng Nhập <span className="text-rose-500">*</span>
+                    Tên Đăng Nhập {!editingUser && <span className="text-rose-500">*</span>}
                   </label>
                   <div className="relative">
                     <User className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
                       type="text"
-                      required
+                      required={!editingUser}
+                      disabled={!!editingUser}
                       name="tenDangNhap"
                       value={formData.tenDangNhap}
                       onChange={handleInputChange}
-                      placeholder="canvien02 / baove02"
-                      className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-white dark:bg-industrial-900 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      placeholder="canvien_01"
+                      className={`w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+                        editingUser 
+                          ? 'bg-slate-200/70 dark:bg-industrial-800/80 cursor-not-allowed opacity-80 font-mono font-bold' 
+                          : 'bg-white dark:bg-industrial-900'
+                      }`}
                     />
                   </div>
                 </div>
 
-                {/* Mật khẩu khởi tạo */}
+                {/* Mật khẩu */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Mật Khẩu Khởi Tạo <span className="text-rose-500">*</span>
+                    {editingUser ? (
+                      <span>Đổi Mật Khẩu</span>
+                    ) : (
+                      <>Mật Khẩu Khởi Tạo <span className="text-rose-500">*</span></>
+                    )}
                   </label>
                   <div className="relative">
                     <Lock className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                     <input
-                      type="text"
-                      required
+                      type="password"
+                      required={!editingUser}
                       name="matKhau"
                       value={formData.matKhau}
                       onChange={handleInputChange}
-                      placeholder="Mặc định: 123"
-                      className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-white dark:bg-industrial-900 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500 font-mono"
+                      placeholder={editingUser ? "Nhập mật khẩu mới (để trống nếu không đổi)" : "123"}
+                      className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-white dark:bg-industrial-900 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                     />
                   </div>
                 </div>
@@ -272,12 +375,12 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     name="hoTen"
                     value={formData.hoTen}
                     onChange={handleInputChange}
-                    placeholder="Nguyễn Văn A"
+                    placeholder="Nguyễn Văn An"
                     className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl bg-white dark:bg-industrial-900 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
                   />
                 </div>
 
-                {/* Chọn vai trò */}
+                {/* Vai trò */}
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Vai Trò Phân Quyền <span className="text-rose-500">*</span>
@@ -287,8 +390,13 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     <select
                       name="vaiTroId"
                       value={formData.vaiTroId}
+                      disabled={editingUser?.tenDangNhap.toLowerCase() === 'admin'}
                       onChange={handleInputChange}
-                      className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-white dark:bg-industrial-900 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 font-medium"
+                      className={`w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500 ${
+                        editingUser?.tenDangNhap.toLowerCase() === 'admin'
+                          ? 'bg-slate-200/70 dark:bg-industrial-800/80 cursor-not-allowed opacity-80'
+                          : 'bg-white dark:bg-industrial-900'
+                      }`}
                     >
                       {roles.map((r) => (
                         <option key={r.id} value={r.id}>
@@ -300,29 +408,9 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                {/* Cổng trực */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Cổng / Làn Trực
-                  </label>
-                  <div className="relative">
-                    <Building className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                    <select
-                      name="gate_Id"
-                      value={formData.gate_Id}
-                      onChange={handleInputChange}
-                      className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-white dark:bg-industrial-900 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                    >
-                      <option value={1}>Cổng 01 (Gate 1 - Trạm Cân Chính)</option>
-                      <option value={2}>Cổng 02 (Gate 2 - Làn Xe Tải Nặng)</option>
-                      <option value={3}>Cổng 03 (Gate 3 - Xuất Container)</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* Số điện thoại */}
-                <div>
+              {/* Hàng dưới: Số điện thoại + Nhóm Nút Submit / Hủy */}
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 pt-1">
+                <div className="w-full sm:max-w-xs">
                   <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                     Số Điện Thoại
                   </label>
@@ -339,51 +427,54 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                   </div>
                 </div>
 
-                {/* Đơn vị công tác */}
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                    Đơn Vị / Phòng Ban
-                  </label>
-                  <input
-                    type="text"
-                    name="diaChi"
-                    value={formData.diaChi}
-                    onChange={handleInputChange}
-                    placeholder="Tổ Cân Ca 1 / Đội Bảo Vệ"
-                    className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl bg-white dark:bg-industrial-900 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-
-              {/* Nút submit form */}
-              <div className="flex justify-end pt-2">
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-xs sm:text-sm shadow-md shadow-amber-600/20 active:scale-95 transition flex items-center gap-2 disabled:opacity-50"
-                >
-                  {creating ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Đang lưu vào SQL Server...</span>
-                    </>
-                  ) : (
-                    <>
-                      <UserPlus className="w-4 h-4" />
-                      <span>Tạo Tài Khoản Mới</span>
-                    </>
+                <div className="flex items-center gap-2">
+                  {editingUser && (
+                    <button
+                      type="button"
+                      onClick={handleCancelEdit}
+                      className="px-4 py-2.5 rounded-xl border border-slate-300 dark:border-industrial-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-industrial-800 font-semibold text-xs sm:text-sm transition"
+                    >
+                      Hủy Bỏ
+                    </button>
                   )}
-                </button>
+
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className={`px-5 py-2.5 rounded-xl text-white font-bold text-xs sm:text-sm shadow-md active:scale-95 transition flex items-center justify-center gap-2 disabled:opacity-50 shrink-0 ${
+                      editingUser 
+                        ? 'bg-gradient-to-r from-sky-600 to-sky-500 hover:from-sky-500 hover:to-sky-400 shadow-sky-600/20' 
+                        : 'bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 shadow-amber-600/20'
+                    }`}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>{editingUser ? 'Đang lưu cập nhật...' : 'Đang lưu...'}</span>
+                      </>
+                    ) : editingUser ? (
+                      <>
+                        <Save className="w-4 h-4" />
+                        <span>💾 Lưu Cập Nhật</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4" />
+                        <span>Tạo Tài Khoản Mới</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
 
-          {/* Section 2: Bảng Danh Sách Người Dùng Hiện Có */}
+          {/* Section 2: Bảng Danh Sách Tài Khoản */}
           <div>
             <div className="flex items-center justify-between mb-3">
               <div className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 flex items-center gap-2">
                 <Users className="w-4 h-4 text-emerald-500" />
-                <span>Danh Sách Người Dùng Trên SQL Server ({users.length} tài khoản)</span>
+                <span>DANH SÁCH TÀI KHOẢN ({users.length})</span>
               </div>
             </div>
 
@@ -395,31 +486,38 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                     <th className="px-4 py-3">Tài Khoản</th>
                     <th className="px-4 py-3">Họ Và Tên</th>
                     <th className="px-4 py-3">Vai Trò</th>
-                    <th className="px-4 py-3">Làn Cổng</th>
                     <th className="px-4 py-3">Liên Hệ</th>
                     <th className="px-4 py-3">Ngày Tạo</th>
-                    <th className="px-4 py-3 text-center w-20">Thao Tác</th>
+                    <th className="px-4 py-3 text-center w-24">Thao Tác</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-industrial-800 bg-white dark:bg-industrial-900">
                   {loading && users.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400">
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
                         <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-amber-500" />
-                        <span>Đang tải danh sách tài khoản từ SQL Server...</span>
+                        <span>Đang tải danh sách tài khoản...</span>
                       </td>
                     </tr>
                   ) : users.length === 0 ? (
                     <tr>
-                      <td colSpan={8} className="py-8 text-center text-slate-400">
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
                         Chưa có người dùng nào.
                       </td>
                     </tr>
                   ) : (
                     users.map((u, idx) => {
                       const isSuperAdmin = u.tenDangNhap.toLowerCase() === 'admin';
+                      const isRowEditing = editingUser?.id === u.id;
                       return (
-                        <tr key={u.id} className="hover:bg-slate-50/80 dark:hover:bg-industrial-800/50 transition">
+                        <tr 
+                          key={u.id} 
+                          className={`transition ${
+                            isRowEditing 
+                              ? 'bg-sky-50 dark:bg-sky-950/40 ring-1 ring-inset ring-sky-300 dark:ring-sky-700' 
+                              : 'hover:bg-slate-50/80 dark:hover:bg-industrial-800/50'
+                          }`}
+                        >
                           <td className="px-4 py-3 text-center text-slate-400 font-mono text-xs">
                             {idx + 1}
                           </td>
@@ -434,9 +532,6 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                               {u.tenVaiTro}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
-                            Cổng {u.gate_Id || 1}
-                          </td>
                           <td className="px-4 py-3 text-slate-600 dark:text-slate-400 font-mono text-xs">
                             {u.dienThoai || '--'}
                           </td>
@@ -444,25 +539,41 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
                             {u.ngayTao ? new Date(u.ngayTao).toLocaleDateString('vi-VN') : '--'}
                           </td>
                           <td className="px-4 py-3 text-center">
-                            {isSuperAdmin ? (
-                              <span className="text-[10px] font-semibold text-slate-400 px-2 py-1 rounded bg-slate-100 dark:bg-industrial-800">
-                                Cố định
-                              </span>
-                            ) : (
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* Nút Sửa: Hỗ trợ sửa cho mọi tài khoản bao gồm cả admin */}
                               <button
                                 type="button"
-                                onClick={() => handleDeleteUser(u)}
-                                disabled={deletingId === u.id}
-                                className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition disabled:opacity-50"
-                                title={`Xóa tài khoản @${u.tenDangNhap}`}
+                                onClick={() => handleStartEdit(u)}
+                                className="p-1.5 rounded-lg text-sky-600 dark:text-sky-400 hover:text-sky-800 hover:bg-sky-100 dark:hover:bg-sky-900/50 transition"
+                                title={`Chỉnh sửa thông tin tài khoản @${u.tenDangNhap}`}
                               >
-                                {deletingId === u.id ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <Trash2 className="w-4 h-4" />
-                                )}
+                                <Pencil className="w-4 h-4" />
                               </button>
-                            )}
+
+                              {/* Nút Xóa: Khóa không cho xóa admin */}
+                              {isSuperAdmin ? (
+                                <span 
+                                  className="text-[10px] font-semibold text-slate-400 px-1.5 py-0.5 rounded bg-slate-100 dark:bg-industrial-800 cursor-not-allowed select-none" 
+                                  title="Tài khoản Quản Trị Viên khởi tạo được bảo vệ cố định"
+                                >
+                                  Cố định
+                                </span>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteUser(u)}
+                                  disabled={deletingId === u.id}
+                                  className="p-1.5 rounded-lg text-rose-500 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition disabled:opacity-50"
+                                  title={`Xóa tài khoản @${u.tenDangNhap}`}
+                                >
+                                  {deletingId === u.id ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <Trash2 className="w-4 h-4" />
+                                  )}
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       );

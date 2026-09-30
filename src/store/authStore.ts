@@ -62,7 +62,7 @@ export const VAI_TRO_LIST: VaiTro[] = [
   },
   {
     Id: 'ROLE_GUARD',
-    TenVaiTro: 'Bảo Vệ Cổng Barie',
+    TenVaiTro: 'Bảo Vệ',
     MoTa: 'Kiểm tra xe, cấp lốt vào cổng và quét nhận diện thẻ RFID',
     MauSac: 'sky',
   },
