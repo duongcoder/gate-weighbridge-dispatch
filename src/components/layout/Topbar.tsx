@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   LogIn,
   LogOut,
-  Database,
   Users,
   Settings,
   Building
@@ -109,36 +108,30 @@ export const Topbar: React.FC<TopbarProps> = ({
     <header className="sticky top-0 z-40 bg-white/95 dark:bg-industrial-900/95 backdrop-blur border-b border-slate-200 dark:border-industrial-800 shadow-sm transition-colors">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16 gap-3">
-          {/* Station Title & Badge */}
+          {/* Station Title & Minimalist Status Dot */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white shadow-md shadow-amber-500/20 ring-2 ring-amber-400/30 shrink-0">
               <Truck className="w-5 h-5" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-base sm:text-lg font-black tracking-tight text-industrial-900 dark:text-white uppercase">
-                  TRẠM CÂN & KIỂM SOÁT CỔNG
-                </h1>
-                
-                {/* 100% Real SQL Server Connection Status Badge */}
-                {isAuthenticated ? (
-                  <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-xs">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                    <span>SQL Server Live</span>
-                  </span>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={onOpenLogin}
-                    className="hidden xl:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded bg-rose-50 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
-                  >
-                    <span>Chưa Đăng Nhập</span>
-                  </button>
-                )}
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-industrial-400 hidden sm:block">
-                Hệ thống điều phối xe & tự động hóa trạm cân công nghiệp
-              </p>
+            <div className="flex items-center gap-2.5">
+              <h1 className="text-base sm:text-lg font-black tracking-tight text-industrial-900 dark:text-white uppercase">
+                GIÁM SÁT & KIỂM SOÁT TRẠM CÂN
+              </h1>
+              
+              {/* Minimalist Status Signal Indicator Dot */}
+              {isAuthenticated ? (
+                <span
+                  className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse ring-4 ring-emerald-500/20 shrink-0 cursor-default"
+                  title="Đang kết nối SQL Server"
+                />
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenLogin}
+                  className="w-2.5 h-2.5 rounded-full bg-rose-500 ring-4 ring-rose-500/20 shrink-0 cursor-pointer"
+                  title="Mất kết nối SQL Server"
+                />
+              )}
             </div>
           </div>
 
