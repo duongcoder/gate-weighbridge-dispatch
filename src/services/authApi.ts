@@ -67,6 +67,30 @@ export interface UpdatePermissionMatrixDto {
   permissions: PermissionMatrixItemDto[];
 }
 
+export interface UserListItemDto {
+  id: number;
+  tenDangNhap: string;
+  hoTen: string;
+  vaiTroId?: number;
+  tenVaiTro: string;
+  gate_Id?: number;
+  dienThoai?: string;
+  email?: string;
+  diaChi?: string;
+  ngayTao?: string;
+}
+
+export interface CreateUserDto {
+  tenDangNhap: string;
+  matKhau: string;
+  hoTen: string;
+  vaiTroId?: number;
+  gate_Id?: number;
+  dienThoai?: string;
+  email?: string;
+  diaChi?: string;
+}
+
 export const authApi = {
   login: async (credentials: LoginDto): Promise<AuthResponseDto> => {
     const response = await api.post<AuthResponseDto>('/auth/login', credentials);
@@ -95,6 +119,22 @@ export const authApi = {
 
   updatePermissionMatrix: async (data: UpdatePermissionMatrixDto): Promise<{ message: string; roleId: number }> => {
     const response = await api.post<{ message: string; roleId: number }>('/permissions/matrix', data);
+    return response.data;
+  },
+
+  // User Management Endpoints
+  getUsers: async (): Promise<UserListItemDto[]> => {
+    const response = await api.get<UserListItemDto[]>('/users');
+    return response.data;
+  },
+
+  createUser: async (data: CreateUserDto): Promise<UserListItemDto> => {
+    const response = await api.post<UserListItemDto>('/users/create', data);
+    return response.data;
+  },
+
+  deleteUser: async (id: number): Promise<{ message: string; id: number }> => {
+    const response = await api.delete<{ message: string; id: number }>(`/users/${id}`);
     return response.data;
   },
 };

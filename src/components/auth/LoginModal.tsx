@@ -8,8 +8,7 @@ import {
   CheckCircle2, 
   Loader2, 
   X,
-  ShieldCheck,
-  Server
+  ShieldCheck
 } from 'lucide-react';
 
 interface LoginModalProps {
@@ -52,7 +51,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         tenDangNhap: tenDangNhap.trim(),
         matKhau: matKhau.trim(),
       });
-      // Chuẩn hóa fallback: Đăng nhập thành công! Chào mừng ${user.hoTen}
       const displayName = res.userSession?.hoTen || res.userSession?.tenDangNhap || tenDangNhap;
       setSuccessMessage(`Đăng nhập thành công! Chào mừng ${displayName}`);
       setTimeout(() => {
@@ -68,12 +66,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
     }
   };
 
-  const handleQuickFill = (username: string) => {
-    setTenDangNhap(username);
-    setMatKhau('123456');
-    setErrorMessage(null);
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
       <div
@@ -81,7 +73,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         role="dialog"
         aria-modal="true"
       >
-        {/* Header: Đồng bộ phong cách Gradient xanh công nghiệp slate-900 cao cấp */}
+        {/* Header: Gradient xanh công nghiệp slate-900 cao cấp */}
         <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-indigo-950 text-white border-b border-slate-700/50">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-xl bg-white/10 backdrop-blur border border-white/10 text-amber-400">
@@ -89,10 +81,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-black tracking-tight uppercase">ĐĂNG NHẬP HỆ THỐNG</h3>
-              <p className="text-[11px] text-slate-300 flex items-center gap-1.5 mt-0.5">
-                <Server className="w-3 h-3 text-emerald-400" />
-                <span>Xác thực SQL Server & JWT Token</span>
-              </p>
             </div>
           </div>
           <button
@@ -134,7 +122,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 required
                 value={tenDangNhap}
                 onChange={(e) => setTenDangNhap(e.target.value)}
-                placeholder="admin / operator / guard / dispatcher"
+                placeholder="Nhập tên đăng nhập (ví dụ: admin)"
                 className="w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-industrial-950 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
@@ -152,7 +140,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                 required
                 value={matKhau}
                 onChange={(e) => setMatKhau(e.target.value)}
-                placeholder="Nhập mật khẩu (Mặc định: 123456)"
+                placeholder="Nhập mật khẩu"
                 className="w-full pl-9 pr-3 py-2 text-sm rounded-xl bg-slate-50 dark:bg-industrial-950 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500"
               />
             </div>
@@ -171,43 +159,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             </label>
           </div>
 
-          {/* Quick Fill Test Accounts */}
-          <div className="pt-2 border-t border-slate-100 dark:border-industrial-800">
-            <div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 mb-1.5 uppercase tracking-wider">
-              Tài Khoản Test Nhanh (MK: 123456):
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleQuickFill('admin')}
-                className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
-              >
-                👑 <b>admin</b> (Quản trị)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('operator')}
-                className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
-              >
-                ⚖️ <b>operator</b> (Bàn cân)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('guard')}
-                className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
-              >
-                🛡️ <b>guard</b> (Bảo vệ)
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickFill('dispatcher')}
-                className="px-2.5 py-1.5 text-xs font-mono rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-amber-100 dark:hover:bg-amber-950/60 text-slate-700 dark:text-slate-200 transition text-left"
-              >
-                🚚 <b>dispatcher</b> (Điều độ)
-              </button>
-            </div>
-          </div>
-
           {/* Submit Button */}
           <button
             type="submit"
@@ -222,7 +173,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             ) : (
               <>
                 <LogIn className="w-4 h-4" />
-                <span>Đăng Nhập Trạm Cân</span>
+                <span>Đăng Nhập</span>
               </>
             )}
           </button>
@@ -238,7 +189,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
               }}
               className="text-amber-600 dark:text-amber-400 font-bold hover:underline"
             >
-              Đăng ký tài xế / nhân viên mới
+              Đăng ký
             </button>
           </div>
         </form>

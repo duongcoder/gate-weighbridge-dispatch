@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useStore } from './store/dispatchStore';
 import { useAuthStore } from './store/authStore';
@@ -32,6 +32,9 @@ import { QuickCheckinModal } from './components/quickCheckin/QuickCheckinModal';
 // RBAC Permission Matrix Modal
 import { PermissionMatrixModal } from './components/admin/PermissionMatrixModal';
 
+// User Management Modal (Admin only)
+import { UserManagementModal } from './components/admin/UserManagementModal';
+
 // Real Database Auth Modals
 import { LoginModal } from './components/auth/LoginModal';
 import { RegisterModal } from './components/auth/RegisterModal';
@@ -50,7 +53,7 @@ export function App() {
     findVehicleByCardOrPlate 
   } = useStore();
 
-  const { currentUser, hasPermission, initAuthFromToken } = useAuthStore();
+  const { currentUser, isAuthenticated, hasPermission, initAuthFromToken } = useAuthStore();
 
   // Modal visibility states
   const [commandModalOpen, setCommandModalOpen] = useState(false);
@@ -62,6 +65,7 @@ export function App() {
   const [rfidSimModalOpen, setRfidSimModalOpen] = useState(false);
   const [quickCheckinOpen, setQuickCheckinOpen] = useState(false);
   const [permissionMatrixOpen, setPermissionMatrixOpen] = useState(false);
+  const [userManagementOpen, setUserManagementOpen] = useState(false);
 
   // Real Database Authentication Modals
   const [loginModalOpen, setLoginModalOpen] = useState(false);
@@ -77,24 +81,44 @@ export function App() {
 
   // Global toast notification (Auto-dismiss 3s, Bottom-Right)
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const toastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const showToast = (msg: string) => {
+    if (toastTimeoutRef.current) {
+      clearTimeout(toastTimeoutRef.current);
+    }
     setToastMessage(msg);
-    setTimeout(() => {
+    toastTimeoutRef.current = setTimeout(() => {
       setToastMessage(null);
-    }, 3000); // Tự động biến mất sau đúng 3 giây
+    }, 3000);
   };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimeoutRef.current) {
+        clearTimeout(toastTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // -------------------------------------------------------------
   // OPERATIONAL REQUIREMENT: INITIALIZE AUTH FROM TOKEN ON STARTUP
+  // Chạy DUY NHẤT 1 LẦN khi ứng dụng khởi chạy (mount), không lặp lại
   // -------------------------------------------------------------
+  const hasRestoredRef = useRef(false);
+
   useEffect(() => {
+    if (hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+
     initAuthFromToken().then((restored) => {
-      if (restored) {
-        showToast('🔒 Đã khôi phục phiên đăng nhập SQL Server!');
+      if (!restored) {
+        // If no token or invalid session, open login modal
+        setLoginModalOpen(true);
       }
+      // Không hiển thị popup khôi phục phiên vì Topbar đã hiển thị trạng thái SQL Server Live
     });
-  }, [initAuthFromToken]);
+  }, []);
 
   // -------------------------------------------------------------
   // OPERATIONAL REQUIREMENT: ACTIVE TAB AUTO-FALLBACK ON USER SWITCH
@@ -111,7 +135,7 @@ export function App() {
   }, [currentUser, activeTab, hasPermission, setActiveTab]);
 
   // -------------------------------------------------------------
-  // OPERATIONAL REQUIREMENT #3: HARDWARE RFID KEYBOARD WEDGE HOOK
+  // HARDWARE RFID KEYBOARD WEDGE HOOK
   // -------------------------------------------------------------
   useRfidKeyboardWedge({
     onScan: (code) => {
@@ -141,9 +165,7 @@ export function App() {
   });
 
   // -------------------------------------------------------------
-  // OPERATIONAL REQUIREMENT: KEYBOARD SHORTCUTS GUARD
-  // F3: Only if hasPermission('Frm_DispatchOrder', 'them')
-  // F2: Only if hasPermission('Frm_QuickCheckin', 'them') || hasPermission('Frm_CardVehicle', 'them')
+  // KEYBOARD SHORTCUTS GUARD
   // -------------------------------------------------------------
   useEffect(() => {
     const handleShortcuts = (e: KeyboardEvent) => {
@@ -201,6 +223,7 @@ export function App() {
         onOpenQuickCheckin={() => setQuickCheckinOpen(true)}
         onOpenRfidSimulator={() => setRfidSimModalOpen(true)}
         onOpenPermissionMatrix={() => setPermissionMatrixOpen(true)}
+        onOpenUserManagement={() => setUserManagementOpen(true)}
         onOpenLogin={() => setLoginModalOpen(true)}
       />
 
@@ -224,46 +247,69 @@ export function App() {
 
       {/* 4. Main Body Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
-        {activeTab === 'COMMANDS' && hasPermission('Frm_Command', 'xem') && (
-          <CommandTable
-            onOpenCreateModal={() => {
-              setEditingCommand(null);
-              setCommandModalOpen(true);
-            }}
-            onEditCommand={(cmd) => {
-              setEditingCommand(cmd);
-              setCommandModalOpen(true);
-            }}
-            onDispatchWithCommand={handleDispatchWithCommand}
-          />
-        )}
+        {!isAuthenticated ? (
+          <div className="py-20 text-center space-y-4">
+            <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto text-2xl font-bold">
+              🔒
+            </div>
+            <h2 className="text-xl font-black text-slate-800 dark:text-white">
+              YÊU CẦU ĐĂNG NHẬP HỆ THỐNG
+            </h2>
+            <p className="text-sm text-slate-500 max-w-md mx-auto">
+              Vui lòng đăng nhập bằng tài khoản SQL Server để truy cập các phân hệ nghiệp vụ trạm cân.
+            </p>
+            <button
+              type="button"
+              onClick={() => setLoginModalOpen(true)}
+              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 text-white font-bold text-sm shadow-md transition hover:scale-105 active:scale-95"
+            >
+              Đăng Nhập Ngay
+            </button>
+          </div>
+        ) : (
+          <>
+            {activeTab === 'COMMANDS' && hasPermission('Frm_Command', 'xem') && (
+              <CommandTable
+                onOpenCreateModal={() => {
+                  setEditingCommand(null);
+                  setCommandModalOpen(true);
+                }}
+                onEditCommand={(cmd) => {
+                  setEditingCommand(cmd);
+                  setCommandModalOpen(true);
+                }}
+                onDispatchWithCommand={handleDispatchWithCommand}
+              />
+            )}
 
-        {activeTab === 'VEHICLES' && hasPermission('Frm_CardVehicle', 'xem') && (
-          <VehicleTable
-            onOpenCreateModal={() => {
-              setEditingVehicle(null);
-              setVehicleModalOpen(true);
-            }}
-            onEditVehicle={(veh) => {
-              setEditingVehicle(veh);
-              setVehicleModalOpen(true);
-            }}
-            onDispatchWithVehicle={handleDispatchWithVehicle}
-            onOpenRfidSimulator={() => setRfidSimModalOpen(true)}
-          />
-        )}
+            {activeTab === 'VEHICLES' && hasPermission('Frm_CardVehicle', 'xem') && (
+              <VehicleTable
+                onOpenCreateModal={() => {
+                  setEditingVehicle(null);
+                  setVehicleModalOpen(true);
+                }}
+                onEditVehicle={(veh) => {
+                  setEditingVehicle(veh);
+                  setVehicleModalOpen(true);
+                }}
+                onDispatchWithVehicle={handleDispatchWithVehicle}
+                onOpenRfidSimulator={() => setRfidSimModalOpen(true)}
+              />
+            )}
 
-        {activeTab === 'DISPATCH' && hasPermission('Frm_DispatchOrder', 'xem') && (
-          <DispatchKanban
-            onOpenWizard={() => {
-              setPreselectedCmdId(null);
-              setPreselectedVehId(null);
-              setDispatchWizardOpen(true);
-            }}
-            onOpenWeighing={(trip) => setActiveWeighingTrip(trip)}
-            onOpenTicket={(trip) => setActiveTicketTrip(trip)}
-            onAttachVehicle={(orderId) => setAttachVehicleOrderId(orderId)}
-          />
+            {activeTab === 'DISPATCH' && hasPermission('Frm_DispatchOrder', 'xem') && (
+              <DispatchKanban
+                onOpenWizard={() => {
+                  setPreselectedCmdId(null);
+                  setPreselectedVehId(null);
+                  setDispatchWizardOpen(true);
+                }}
+                onOpenWeighing={(trip) => setActiveWeighingTrip(trip)}
+                onOpenTicket={(trip) => setActiveTicketTrip(trip)}
+                onAttachVehicle={(orderId) => setAttachVehicleOrderId(orderId)}
+              />
+            )}
+          </>
         )}
       </main>
 
@@ -289,6 +335,18 @@ export function App() {
         isOpen={registerModalOpen}
         onClose={() => setRegisterModalOpen(false)}
         onOpenLogin={() => setLoginModalOpen(true)}
+      />
+
+      {/* User Management Admin Modal */}
+      <UserManagementModal
+        isOpen={userManagementOpen}
+        onClose={() => setUserManagementOpen(false)}
+      />
+
+      {/* Permission Matrix Admin Modal */}
+      <PermissionMatrixModal
+        isOpen={permissionMatrixOpen}
+        onClose={() => setPermissionMatrixOpen(false)}
       />
 
       {/* Command Modal */}
@@ -368,12 +426,6 @@ export function App() {
         isOpen={!!attachVehicleOrderId}
         onClose={() => setAttachVehicleOrderId(null)}
         orderId={attachVehicleOrderId}
-      />
-
-      {/* Permission Matrix Admin Modal */}
-      <PermissionMatrixModal
-        isOpen={permissionMatrixOpen}
-        onClose={() => setPermissionMatrixOpen(false)}
       />
     </div>
   );

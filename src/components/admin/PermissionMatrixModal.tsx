@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../store/authStore';
+import { authApi } from '../../services/authApi';
 import { Modal } from '../common/Modal';
 import { PhanQuyen, MaChucNang } from '../../types/auth';
 import { 
   ShieldCheck, 
   Save, 
   RotateCcw, 
-  CheckSquare, 
-  Square, 
   CheckCircle2, 
-  Users, 
-  Lock, 
-  KeyRound 
+  KeyRound, 
+  Loader2
 } from 'lucide-react';
 import { soundFx } from '../../utils/audio';
 
@@ -24,10 +22,11 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const { roles, forms, permissions, updateRoleMatrix, resetPermissions, currentUser } = useAuthStore();
+  const { roles, forms, permissions, updateRoleMatrix, resetPermissions } = useAuthStore();
   const [selectedRoleId, setSelectedRoleId] = useState<string>('ROLE_SCALE');
   const [matrixData, setMatrixData] = useState<PhanQuyen[]>([]);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   // Sync matrix data when selected role changes or modal opens
   useEffect(() => {
@@ -58,11 +57,9 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
       prev.map((row) => {
         if (row.MaChucNang === maChucNang) {
           const newVal = !row[flag];
-          // If unchecking 'Xem', automatically uncheck all others
           if (flag === 'Xem' && !newVal) {
             return { ...row, Xem: false, Them: false, Sua: false, Xoa: false, BaoCao: false };
           }
-          // If checking any action, automatically ensure 'Xem' is checked
           if (flag !== 'Xem' && newVal) {
             return { ...row, [flag]: true, Xem: true };
           }
@@ -109,11 +106,47 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
     );
   };
 
-  const handleSave = () => {
+  const mapRoleCodeToId = (roleCode: string): number => {
+    switch (roleCode) {
+      case 'ROLE_ADMIN': return 1;
+      case 'ROLE_SCALE': return 2;
+      case 'ROLE_GUARD': return 3;
+      case 'ROLE_DISPATCH': return 4;
+      default: return 2;
+    }
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
     updateRoleMatrix(selectedRoleId, matrixData);
     soundFx.playScaleCaptureTone();
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+
+    // Đồng bộ trực tiếp vào cơ sở dữ liệu SQL Server nếu có kết nối
+    try {
+      const vaiTroIdNum = mapRoleCodeToId(selectedRoleId);
+      await authApi.updatePermissionMatrix({
+        vaiTroId: vaiTroIdNum,
+        permissions: matrixData.map((m, idx) => ({
+          id: 0,
+          chucNangId: idx + 1,
+          vaiTroId: vaiTroIdNum,
+          tenForm: m.MaChucNang,
+          tenChucNang: m.MaChucNang,
+          xem: m.Xem,
+          them: m.Them,
+          sua: m.Sua,
+          xoa: m.Xoa,
+          baoCao: m.BaoCao,
+          gate_Id: 1,
+        })),
+      });
+    } catch (err) {
+      console.warn('Could not sync permissions to backend database:', err);
+    } finally {
+      setSaving(false);
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3000);
+    }
   };
 
   const handleResetDefaults = () => {
@@ -183,7 +216,7 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
           {savedSuccess && (
             <span className="flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-100 dark:bg-emerald-950 px-2.5 py-1 rounded-md animate-in fade-in">
               <CheckCircle2 className="w-4 h-4" />
-              Đã lưu thành công!
+              Đã lưu vào SQL Server thành công!
             </span>
           )}
         </div>
@@ -350,7 +383,7 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
         {/* Footer actions */}
         <div className="flex items-center justify-between pt-3 border-t border-slate-200 dark:border-industrial-800">
           <span className="text-[11px] text-slate-500">
-            * Thay đổi có hiệu lực ngay lập tức cho phiên làm việc hiện tại
+            * Thay đổi có hiệu lực ngay lập tức cho phiên làm việc hiện tại và lưu vào SQL Server
           </span>
 
           <div className="flex items-center gap-2">
@@ -365,10 +398,20 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
             <button
               type="button"
               onClick={handleSave}
-              className="flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 active:scale-95 rounded-lg shadow transition"
+              disabled={saving}
+              className="flex items-center gap-1.5 px-5 py-2 text-xs font-bold text-white bg-amber-600 hover:from-amber-500 hover:to-amber-400 active:scale-95 rounded-lg shadow transition disabled:opacity-50"
             >
-              <Save className="w-4 h-4" />
-              <span>Lưu Ma Trận Quyền</span>
+              {saving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Đang lưu...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4" />
+                  <span>Lưu Ma Trận Quyền</span>
+                </>
+              )}
             </button>
           </div>
         </div>

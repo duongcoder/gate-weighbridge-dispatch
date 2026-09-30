@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { NguoiDung, VaiTro, ChucNang, PhanQuyen, MaChucNang, PermissionAction } from '../types/auth';
 import { authApi, LoginDto, RegisterDto, UserSessionDto, AuthResponseDto } from '../services/authApi';
 
-export type AuthMode = 'LIVE' | 'DEMO';
-
 export const CHUC_NANG_LIST: ChucNang[] = [
   {
     MaChucNang: 'Frm_Command',
@@ -76,53 +74,6 @@ export const VAI_TRO_LIST: VaiTro[] = [
   },
 ];
 
-export const NGUOI_DUNG_LIST: NguoiDung[] = [
-  {
-    Id: 'usr-admin',
-    TenDangNhap: 'admin',
-    HoTen: 'Quản Trị Viên Hệ Thống',
-    VaiTroId: 'ROLE_ADMIN',
-    Email: 'admin@weighbridge.vn',
-    SoDienThoai: '0901.888.999',
-    ChucVu: 'Trưởng Trạm Cân & Kiểm Soát Cổng',
-    KichHoat: true,
-    Avatar: '👑',
-  },
-  {
-    Id: 'usr-scale',
-    TenDangNhap: 'operator',
-    HoTen: 'Trần Thị Bàn Cân',
-    VaiTroId: 'ROLE_SCALE',
-    Email: 'operator@weighbridge.vn',
-    SoDienThoai: '0912.111.222',
-    ChucVu: 'Nhân Viên Cân Điện Tử Ca 1',
-    KichHoat: true,
-    Avatar: '⚖️',
-  },
-  {
-    Id: 'usr-guard',
-    TenDangNhap: 'guard',
-    HoTen: 'Nguyễn Văn Cổng',
-    VaiTroId: 'ROLE_GUARD',
-    Email: 'guard@weighbridge.vn',
-    SoDienThoai: '0905.333.444',
-    ChucVu: 'Bảo Vệ Barrier Cổng 1',
-    KichHoat: true,
-    Avatar: '🛡️',
-  },
-  {
-    Id: 'usr-dispatch',
-    TenDangNhap: 'dispatcher',
-    HoTen: 'Phạm Điều Độ',
-    VaiTroId: 'ROLE_DISPATCH',
-    Email: 'dispatcher@weighbridge.vn',
-    SoDienThoai: '0936.555.666',
-    ChucVu: 'Chuyên Viên Điều Phối Đội Xe',
-    KichHoat: true,
-    Avatar: '🚚',
-  },
-];
-
 export const DEFAULT_PHAN_QUYEN: PhanQuyen[] = [
   // 1. Quản Trị Viên (Full All Permissions)
   ...CHUC_NANG_LIST.map((fn, idx) => ({
@@ -165,12 +116,20 @@ export const DEFAULT_PHAN_QUYEN: PhanQuyen[] = [
   { Id: 'pq-disp-7', VaiTroId: 'ROLE_DISPATCH', MaChucNang: 'Frm_UserPermission', Xem: false, Them: false, Sua: false, Xoa: false, BaoCao: false, Gate_Id: 'ALL' },
 ];
 
+const DEFAULT_GUEST: NguoiDung = {
+  Id: '0',
+  TenDangNhap: 'chua_dang_nhap',
+  HoTen: 'Chưa Đăng Nhập',
+  VaiTroId: 'ROLE_GUEST',
+  ChucVu: 'Khách / Vui lòng đăng nhập',
+  KichHoat: false,
+  Avatar: '👤',
+};
+
 const STORAGE_KEYS = {
-  CURRENT_USER_ID: 'gw_auth_user_id_v2',
-  PERMISSIONS: 'gw_auth_permissions_v2',
   AUTH_TOKEN: 'gw_auth_token',
-  AUTH_MODE: 'gw_auth_mode',
   USER_SESSION: 'gw_user_session',
+  PERMISSIONS: 'gw_auth_permissions_v2',
 };
 
 function loadStorage<T>(key: string, defaultValue: T): T {
@@ -186,21 +145,22 @@ function loadStorage<T>(key: string, defaultValue: T): T {
 function saveStorage<T>(key: string, value: T) {
   try {
     if (typeof window === 'undefined' || !window.localStorage) return;
-    window.localStorage.setItem(key, JSON.stringify(value));
+    if (value === null || value === undefined) {
+      window.localStorage.removeItem(key);
+    } else {
+      window.localStorage.setItem(key, JSON.stringify(value));
+    }
   } catch (err) {
     console.error('Failed to save to localStorage:', err);
   }
 }
 
 class AuthStoreManager {
-  private currentUserId: string = loadStorage(STORAGE_KEYS.CURRENT_USER_ID, NGUOI_DUNG_LIST[0].Id);
+  private token: string | null = (typeof window !== 'undefined' && window.localStorage)
+    ? window.localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)
+    : null;
+  private liveUserSession: UserSessionDto | null = loadStorage<UserSessionDto | null>(STORAGE_KEYS.USER_SESSION, null);
   private permissions: PhanQuyen[] = loadStorage(STORAGE_KEYS.PERMISSIONS, DEFAULT_PHAN_QUYEN);
-  
-  // Real Backend Authentication State
-  private authMode: AuthMode = loadStorage(STORAGE_KEYS.AUTH_MODE, 'DEMO');
-  private token: string | null = (typeof window !== 'undefined' && window.localStorage) ? window.localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) : null;
-  private liveUserSession: UserSessionDto | null = loadStorage(STORAGE_KEYS.USER_SESSION, null);
-  
   private listeners: Set<() => void> = new Set();
 
   constructor() {
@@ -222,12 +182,8 @@ class AuthStoreManager {
     this.listeners.forEach((listener) => listener());
   }
 
-  getAuthMode(): AuthMode {
-    return this.authMode;
-  }
-
   isAuthenticated(): boolean {
-    return this.authMode === 'LIVE' && !!this.token && !!this.liveUserSession;
+    return !!this.token && !!this.liveUserSession;
   }
 
   getLiveUserSession(): UserSessionDto | null {
@@ -235,10 +191,10 @@ class AuthStoreManager {
   }
 
   getCurrentUser(): NguoiDung {
-    if (this.authMode === 'LIVE' && this.liveUserSession) {
+    if (this.liveUserSession) {
       const roleIdStr = this.mapRoleIdToCode(this.liveUserSession.vaiTroId);
       return {
-        Id: `db-${this.liveUserSession.id}`,
+        Id: String(this.liveUserSession.id),
         TenDangNhap: this.liveUserSession.tenDangNhap,
         HoTen: this.liveUserSession.hoTen,
         VaiTroId: roleIdStr,
@@ -249,9 +205,7 @@ class AuthStoreManager {
         Avatar: this.getAvatarForRole(this.liveUserSession.vaiTroId),
       };
     }
-
-    const found = NGUOI_DUNG_LIST.find((u) => u.Id === this.currentUserId);
-    return found || NGUOI_DUNG_LIST[0];
+    return DEFAULT_GUEST;
   }
 
   getCurrentRole(): VaiTro {
@@ -260,25 +214,9 @@ class AuthStoreManager {
     return role || {
       Id: user.VaiTroId,
       TenVaiTro: user.ChucVu,
-      MoTa: 'Vai trò kết nối từ cơ sở dữ liệu SQL Server',
+      MoTa: 'Tài khoản kết nối từ cơ sở dữ liệu SQL Server',
       MauSac: 'emerald',
     };
-  }
-
-  // Switch demo account (keeps DEV toggle functioning)
-  setCurrentUser(userId: string) {
-    this.currentUserId = userId;
-    this.authMode = 'DEMO';
-    saveStorage(STORAGE_KEYS.AUTH_MODE, 'DEMO');
-    saveStorage(STORAGE_KEYS.CURRENT_USER_ID, userId);
-    this.notify();
-  }
-
-  // Toggle between live and demo
-  setAuthMode(mode: AuthMode) {
-    this.authMode = mode;
-    saveStorage(STORAGE_KEYS.AUTH_MODE, mode);
-    this.notify();
   }
 
   // Real Database Login
@@ -286,12 +224,10 @@ class AuthStoreManager {
     const res = await authApi.login(credentials);
     this.token = res.token;
     this.liveUserSession = res.userSession;
-    this.authMode = 'LIVE';
 
     if (typeof window !== 'undefined' && window.localStorage) {
       window.localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, res.token);
     }
-    saveStorage(STORAGE_KEYS.AUTH_MODE, 'LIVE');
     saveStorage(STORAGE_KEYS.USER_SESSION, res.userSession);
 
     this.notify();
@@ -303,12 +239,10 @@ class AuthStoreManager {
     const res = await authApi.register(data);
     this.token = res.token;
     this.liveUserSession = res.userSession;
-    this.authMode = 'LIVE';
 
     if (typeof window !== 'undefined' && window.localStorage) {
       window.localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, res.token);
     }
-    saveStorage(STORAGE_KEYS.AUTH_MODE, 'LIVE');
     saveStorage(STORAGE_KEYS.USER_SESSION, res.userSession);
 
     this.notify();
@@ -319,12 +253,10 @@ class AuthStoreManager {
   logout() {
     this.token = null;
     this.liveUserSession = null;
-    this.authMode = 'DEMO';
 
     if (typeof window !== 'undefined' && window.localStorage) {
       window.localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
     }
-    saveStorage(STORAGE_KEYS.AUTH_MODE, 'DEMO');
     saveStorage(STORAGE_KEYS.USER_SESSION, null);
 
     this.notify();
@@ -332,8 +264,8 @@ class AuthStoreManager {
 
   // Auto-restore session from token on startup
   async initAuthFromToken(): Promise<boolean> {
-    const savedToken = (typeof window !== 'undefined' && window.localStorage) 
-      ? window.localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) 
+    const savedToken = (typeof window !== 'undefined' && window.localStorage)
+      ? window.localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)
       : null;
 
     if (!savedToken) {
@@ -344,61 +276,79 @@ class AuthStoreManager {
       this.token = savedToken;
       const session = await authApi.getCurrentUser();
       this.liveUserSession = session;
-      this.authMode = 'LIVE';
       saveStorage(STORAGE_KEYS.USER_SESSION, session);
-      saveStorage(STORAGE_KEYS.AUTH_MODE, 'LIVE');
       this.notify();
       return true;
     } catch (err) {
-      console.warn('Saved auth token is invalid or backend is unreachable, falling back to demo mode:', err);
+      console.warn('Saved auth token is invalid or backend unreachable:', err);
       this.logout();
       return false;
     }
   }
 
-  getPermissionsForRole(roleId: string): PhanQuyen[] {
-    return this.permissions.filter((p) => p.VaiTroId === roleId);
+  // Universal Permission Check: checks dynamic permissions from SQL Server
+  hasPermission(maChucNang: MaChucNang, action: PermissionAction): boolean {
+    if (!this.liveUserSession) {
+      return false;
+    }
+
+    // Admin (VaiTroId = 1) always has full permissions
+    if (this.liveUserSession.vaiTroId === 1) {
+      return true;
+    }
+
+    const permDetail = this.liveUserSession.permissions[maChucNang];
+    if (permDetail) {
+      switch (action) {
+        case 'xem': return permDetail.xem;
+        case 'them': return permDetail.them;
+        case 'sua': return permDetail.sua;
+        case 'xoa': return permDetail.xoa;
+        case 'baoCao': return permDetail.baoCao;
+        default: return false;
+      }
+    }
+
+    return false;
   }
 
-  getPermission(roleId: string, maChucNang: MaChucNang): PhanQuyen | undefined {
+  getPermission(maChucNang: MaChucNang): PhanQuyen | undefined {
+    if (this.liveUserSession) {
+      if (this.liveUserSession.vaiTroId === 1) {
+        return {
+          Id: `live-${maChucNang}`,
+          VaiTroId: 'ROLE_ADMIN',
+          MaChucNang: maChucNang,
+          Xem: true,
+          Them: true,
+          Sua: true,
+          Xoa: true,
+          BaoCao: true,
+          Gate_Id: 'ALL',
+        };
+      }
+      const permDetail = this.liveUserSession.permissions[maChucNang];
+      if (permDetail) {
+        return {
+          Id: `live-${maChucNang}`,
+          VaiTroId: this.mapRoleIdToCode(this.liveUserSession.vaiTroId),
+          MaChucNang: maChucNang,
+          Xem: permDetail.xem,
+          Them: permDetail.them,
+          Sua: permDetail.sua,
+          Xoa: permDetail.xoa,
+          BaoCao: permDetail.baoCao,
+          Gate_Id: `GATE_${this.liveUserSession.gateId || 1}`,
+        };
+      }
+    }
     return this.permissions.find(
-      (p) => p.VaiTroId === roleId && p.MaChucNang === maChucNang
+      (p) => p.VaiTroId === this.getCurrentUser().VaiTroId && p.MaChucNang === maChucNang
     );
   }
 
-  // Universal Permission Check: works seamlessly with BOTH Live DB and Demo Matrix
-  hasPermission(roleId: string, maChucNang: MaChucNang, action: PermissionAction): boolean {
-    if (this.authMode === 'LIVE' && this.liveUserSession) {
-      // Admin in database (VaiTroId = 1) has full permissions
-      if (this.liveUserSession.vaiTroId === 1) {
-        return true;
-      }
-
-      // Check dynamic permissions dictionary from backend
-      const permDetail = this.liveUserSession.permissions[maChucNang];
-      if (permDetail) {
-        switch (action) {
-          case 'xem': return permDetail.xem;
-          case 'them': return permDetail.them;
-          case 'sua': return permDetail.sua;
-          case 'xoa': return permDetail.xoa;
-          case 'baoCao': return permDetail.baoCao;
-          default: return false;
-        }
-      }
-    }
-
-    // Fallback or Demo mode: check local matrix
-    const perm = this.getPermission(roleId, maChucNang);
-    if (!perm) return false;
-    switch (action) {
-      case 'xem': return perm.Xem;
-      case 'them': return perm.Them;
-      case 'sua': return perm.Sua;
-      case 'xoa': return perm.Xoa;
-      case 'baoCao': return perm.BaoCao;
-      default: return false;
-    }
+  getPermissionsForRole(roleId: string): PhanQuyen[] {
+    return this.permissions.filter((p) => p.VaiTroId === roleId);
   }
 
   updatePermissionFlag(roleId: string, maChucNang: MaChucNang, flag: 'Xem' | 'Them' | 'Sua' | 'Xoa' | 'BaoCao', value: boolean) {
@@ -449,11 +399,9 @@ class AuthStoreManager {
     return {
       currentUser: this.getCurrentUser(),
       currentRole: this.getCurrentRole(),
-      users: NGUOI_DUNG_LIST,
       roles: VAI_TRO_LIST,
       forms: CHUC_NANG_LIST,
       permissions: this.permissions,
-      authMode: this.authMode,
       isAuthenticated: this.isAuthenticated(),
       liveUserSession: this.liveUserSession,
     };
@@ -473,16 +421,14 @@ export function useAuthStore() {
 
   return {
     ...state,
-    setCurrentUser: (userId: string) => authStore.setCurrentUser(userId),
-    setAuthMode: (mode: AuthMode) => authStore.setAuthMode(mode),
     login: (credentials: LoginDto) => authStore.login(credentials),
     register: (data: RegisterDto) => authStore.register(data),
     logout: () => authStore.logout(),
     initAuthFromToken: () => authStore.initAuthFromToken(),
-    hasPermission: (maChucNang: MaChucNang, action: PermissionAction) => 
-      authStore.hasPermission(state.currentUser.VaiTroId, maChucNang, action),
+    hasPermission: (maChucNang: MaChucNang, action: PermissionAction) =>
+      authStore.hasPermission(maChucNang, action),
     getPermission: (maChucNang: MaChucNang) =>
-      authStore.getPermission(state.currentUser.VaiTroId, maChucNang),
+      authStore.getPermission(maChucNang),
     updatePermissionFlag: (roleId: string, maChucNang: MaChucNang, flag: 'Xem' | 'Them' | 'Sua' | 'Xoa' | 'BaoCao', value: boolean) =>
       authStore.updatePermissionFlag(roleId, maChucNang, flag, value),
     updateRoleMatrix: (roleId: string, newPermissions: PhanQuyen[]) =>

@@ -14,13 +14,13 @@ import {
   RotateCcw,
   ScanLine,
   ChevronDown,
-  Check,
   ShieldCheck,
   LogIn,
   LogOut,
   Database,
-  Radio,
-  Settings
+  Users,
+  Settings,
+  Building
 } from 'lucide-react';
 import { Authorize } from '../common/Authorize';
 
@@ -28,6 +28,7 @@ interface TopbarProps {
   onOpenQuickCheckin: () => void;
   onOpenRfidSimulator: () => void;
   onOpenPermissionMatrix: () => void;
+  onOpenUserManagement: () => void;
   onOpenLogin: () => void;
 }
 
@@ -35,6 +36,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   onOpenQuickCheckin,
   onOpenRfidSimulator,
   onOpenPermissionMatrix,
+  onOpenUserManagement,
   onOpenLogin,
 }) => {
   const { 
@@ -53,12 +55,8 @@ export const Topbar: React.FC<TopbarProps> = ({
   const { 
     currentUser, 
     currentRole, 
-    users, 
-    roles, 
-    permissions,
-    setCurrentUser, 
+    liveUserSession,
     hasPermission,
-    authMode,
     isAuthenticated,
     logout
   } = useAuthStore();
@@ -78,7 +76,7 @@ export const Topbar: React.FC<TopbarProps> = ({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Real-time digital clock
+  // Real-time clock
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -88,39 +86,23 @@ export const Topbar: React.FC<TopbarProps> = ({
 
   const activeTripsCount = trips.filter(t => t.step !== 'COMPLETED').length;
 
-  // Tab permissions
+  // Permissions
   const canViewCommands = hasPermission('Frm_Command', 'xem');
   const canViewVehicles = hasPermission('Frm_CardVehicle', 'xem');
   const canViewDispatch = hasPermission('Frm_DispatchOrder', 'xem');
-  const canManagePermissions = hasPermission('Frm_UserPermission', 'xem') || currentUser.VaiTroId === 'ROLE_ADMIN';
-
-  // Handle switching user with active tab auto-fallback
-  const handleSwitchUser = (userId: string) => {
-    setCurrentUser(userId);
-    setUserDropdownOpen(false);
-
-    const targetUser = users.find(u => u.Id === userId);
-    if (targetUser) {
-      const canCmd = permissions.some(p => p.VaiTroId === targetUser.VaiTroId && p.MaChucNang === 'Frm_Command' && p.Xem);
-      const canVeh = permissions.some(p => p.VaiTroId === targetUser.VaiTroId && p.MaChucNang === 'Frm_CardVehicle' && p.Xem);
-      const canDsp = permissions.some(p => p.VaiTroId === targetUser.VaiTroId && p.MaChucNang === 'Frm_DispatchOrder' && p.Xem);
-
-      const validTabs: ('COMMANDS' | 'VEHICLES' | 'DISPATCH')[] = [];
-      if (canCmd) validTabs.push('COMMANDS');
-      if (canVeh) validTabs.push('VEHICLES');
-      if (canDsp) validTabs.push('DISPATCH');
-
-      if (validTabs.length > 0 && !validTabs.includes(activeTab)) {
-        setActiveTab(validTabs[0]);
-      }
-    }
-  };
+  const isAdmin = currentUser.VaiTroId === 'ROLE_ADMIN' || liveUserSession?.vaiTroId === 1;
 
   const roleBadgeColors: Record<string, string> = {
     ROLE_ADMIN: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
     ROLE_SCALE: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-800',
     ROLE_GUARD: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border-sky-300 dark:border-sky-800',
     ROLE_DISPATCH: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-300 dark:border-purple-800',
+  };
+
+  const handleLogout = () => {
+    setUserDropdownOpen(false);
+    logout();
+    onOpenLogin();
   };
 
   return (
@@ -138,17 +120,20 @@ export const Topbar: React.FC<TopbarProps> = ({
                   TRẠM CÂN & KIỂM SOÁT CỔNG
                 </h1>
                 
-                {/* Database Connection Status Badge */}
-                {authMode === 'LIVE' && isAuthenticated ? (
-                  <span className="hidden xl:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800">
-                    <Database className="w-3 h-3 text-emerald-500" />
+                {/* 100% Real SQL Server Connection Status Badge */}
+                {isAuthenticated ? (
+                  <span className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 shadow-xs">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                     <span>SQL Server Live</span>
                   </span>
                 ) : (
-                  <span className="hidden xl:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded bg-amber-50 text-amber-700 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-800">
-                    <Radio className="w-3 h-3 text-amber-500 animate-pulse" />
-                    <span>Offline Demo</span>
-                  </span>
+                  <button
+                    type="button"
+                    onClick={onOpenLogin}
+                    className="hidden xl:inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded bg-rose-50 text-rose-700 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-800"
+                  >
+                    <span>Chưa Đăng Nhập</span>
+                  </button>
                 )}
               </div>
               <p className="text-[11px] text-slate-500 dark:text-industrial-400 hidden sm:block">
@@ -167,114 +152,110 @@ export const Topbar: React.FC<TopbarProps> = ({
               </span>
             </div>
 
-            {/* User Profile Dropdown Trigger */}
+            {/* User Profile Dropdown Trigger (100% Real Account) */}
             <div className="relative" ref={dropdownRef}>
-              <button
-                type="button"
-                onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-industrial-800 dark:hover:bg-industrial-700 border border-slate-200 dark:border-industrial-700 transition"
-                title="Tài khoản đang đăng nhập / Chuyển đổi vai trò & menu quản trị"
-              >
-                <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs ring-1 ring-amber-500/30">
-                  {currentUser.Avatar || currentUser.HoTen.charAt(0)}
-                </div>
-                <div className="hidden sm:block text-left">
-                  <div className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight flex items-center gap-1.5">
-                    <span>{currentUser.HoTen}</span>
-                    {authMode === 'LIVE' && (
-                      <span className="w-2 h-2 rounded-full bg-emerald-500" title="Đã kết nối SQL Server qua JWT" />
-                    )}
+              {isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-industrial-800 dark:hover:bg-industrial-700 border border-slate-200 dark:border-industrial-700 transition shadow-xs"
+                  title="Tài khoản đang đăng nhập / Menu hệ thống"
+                >
+                  <div className="w-7 h-7 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold text-xs ring-1 ring-amber-500/30">
+                    {currentUser.Avatar || currentUser.HoTen.charAt(0)}
                   </div>
-                  <div className="flex items-center gap-1">
-                    <span className={`text-[10px] font-semibold px-1.5 py-0.2 rounded border ${roleBadgeColors[currentUser.VaiTroId] || 'bg-slate-100 text-slate-700'}`}>
-                      {currentRole?.TenVaiTro}
-                    </span>
+                  <div className="hidden sm:block text-left">
+                    <div className="text-xs font-bold text-slate-800 dark:text-slate-100 leading-tight flex items-center gap-1.5">
+                      <span>{currentUser.HoTen}</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-500" title="Đã kết nối SQL Server Live" />
+                    </div>
+                    <div className="flex items-center gap-1 mt-0.5">
+                      <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded border ${roleBadgeColors[currentUser.VaiTroId] || 'bg-slate-100 text-slate-700'}`}>
+                        {currentRole?.TenVaiTro}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-              </button>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onOpenLogin}
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white shadow-sm transition"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Đăng Nhập</span>
+                </button>
+              )}
 
-              {/* User Dropdown Menu (Tối ưu gọn gàng, chứa Ma trận Phân quyền & Đăng xuất viền đỏ) */}
-              {userDropdownOpen && (
+              {/* User Dropdown Menu (Chỉ chứa tài khoản thực & công cụ quản trị) */}
+              {userDropdownOpen && isAuthenticated && (
                 <div className="absolute right-0 mt-2 w-72 bg-white dark:bg-industrial-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-industrial-700 py-1.5 z-50 animate-in fade-in zoom-in-95 duration-100">
-                  {/* Status header */}
-                  <div className="px-3.5 py-2.5 border-b border-slate-100 dark:border-industrial-800 flex items-center justify-between">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
-                      <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
-                      <span>{authMode === 'LIVE' ? 'Tài Khoản SQL Server' : 'Chuyển Đổi Demo'}</span>
+                  {/* Account Header Information */}
+                  <div className="px-4 py-3 border-b border-slate-100 dark:border-industrial-800">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Tài Khoản SQL Server</span>
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                        LIVE DB
+                      </span>
                     </div>
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${authMode === 'LIVE' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'}`}>
-                      {authMode === 'LIVE' ? 'LIVE DB' : 'OFFLINE'}
-                    </span>
+                    <div className="text-sm font-black text-slate-800 dark:text-white">
+                      {currentUser.HoTen}
+                    </div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                      Tên đăng nhập: <span className="font-mono font-semibold text-slate-700 dark:text-slate-200">@{currentUser.TenDangNhap}</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1 mt-1">
+                      <Building className="w-3 h-3 text-amber-500" />
+                      <span>Cổng trực mặc định: Cổng {liveUserSession?.gateId || 1}</span>
+                    </div>
                   </div>
 
-                  {/* Quick role switches (demo) */}
-                  <div className="py-1">
-                    <div className="px-3.5 py-1 text-[10px] font-semibold text-slate-400 dark:text-slate-500 uppercase">
-                      4 Vai Trò Tiêu Chuẩn:
-                    </div>
-                    {users.map((user) => {
-                      const isCurrent = user.Id === currentUser.Id;
-                      const r = roles.find((rl) => rl.Id === user.VaiTroId);
-                      return (
-                        <button
-                          key={user.Id}
-                          type="button"
-                          onClick={() => handleSwitchUser(user.Id)}
-                          className={`w-full text-left px-3.5 py-2 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-industrial-800 transition ${
-                            isCurrent && authMode === 'DEMO' ? 'bg-amber-50/60 dark:bg-amber-950/30' : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5">
-                            <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${
-                              isCurrent && authMode === 'DEMO'
-                                ? 'bg-amber-500 text-white shadow-sm' 
-                                : 'bg-slate-200 dark:bg-industrial-700 text-slate-700 dark:text-slate-300'
-                            }`}>
-                              {user.Avatar || user.HoTen.charAt(0)}
-                            </div>
-                            <div>
-                              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                                {user.HoTen}
-                              </div>
-                              <div className="text-[10px] text-slate-500 dark:text-slate-400">
-                                {r?.TenVaiTro} ({user.TenDangNhap})
-                              </div>
-                            </div>
-                          </div>
-                          {isCurrent && authMode === 'DEMO' && <Check className="w-4 h-4 text-amber-600 shrink-0" />}
-                        </button>
-                      );
-                    })}
-                  </div>
+                  {/* Actions Section */}
+                  <div className="px-2 py-2 space-y-1">
+                    {/* 👥 Quản Lý Tài Khoản (Admin only) */}
+                    {isAdmin && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setUserDropdownOpen(false);
+                          onOpenUserManagement();
+                        }}
+                        className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl bg-amber-50 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/80 transition flex items-center gap-2.5"
+                      >
+                        <Users className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                        <span>👥 Quản Lý Tài Khoản</span>
+                      </button>
+                    )}
 
-                  {/* System & Tools Section inside User Dropdown */}
-                  <div className="px-2 pt-2 pb-1 border-t border-slate-100 dark:border-industrial-800 space-y-1">
-                    {/* ⚙ Ma Trận Phân Quyền (Chỉ render nếu user có quyền Admin) */}
-                    {canManagePermissions && (
+                    {/* ⚙ Ma Trận Phân Quyền (Admin only) */}
+                    {isAdmin && (
                       <button
                         type="button"
                         onClick={() => {
                           setUserDropdownOpen(false);
                           onOpenPermissionMatrix();
                         }}
-                        className="w-full text-left px-3 py-2 text-xs font-semibold rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 transition flex items-center gap-2"
+                        className="w-full text-left px-3 py-2 text-xs font-semibold rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/80 transition flex items-center gap-2.5"
                       >
                         <Settings className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                         <span>⚙ Ma Trận Phân Quyền (RBAC)</span>
                       </button>
                     )}
 
-                    {/* Quét Thẻ RFID (F2) shortcut option inside dropdown */}
+                    {/* 📟 Quét Thẻ RFID (F2) */}
                     <button
                       type="button"
                       onClick={() => {
                         setUserDropdownOpen(false);
                         onOpenRfidSimulator();
                       }}
-                      className="w-full text-left px-3 py-2 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-industrial-800 transition flex items-center justify-between"
+                      className="w-full text-left px-3 py-2 text-xs font-medium rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-industrial-800 transition flex items-center justify-between"
                     >
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2.5">
                         <ScanLine className="w-4 h-4 text-amber-500" />
                         <span>Quét Thẻ RFID</span>
                       </div>
@@ -284,44 +265,27 @@ export const Topbar: React.FC<TopbarProps> = ({
                     </button>
                   </div>
 
-                  {/* Bottom Action: Đăng Xuất Viền Đỏ ở dưới đáy dropdown */}
+                  {/* 🚪 Đăng Xuất Viền Đỏ ở dưới đáy dropdown */}
                   <div className="px-2 pt-2 pb-1.5 border-t border-slate-100 dark:border-industrial-800">
-                    {isAuthenticated ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUserDropdownOpen(false);
-                          logout();
-                        }}
-                        className="w-full py-2 px-3 text-xs font-bold rounded-xl border border-rose-400 dark:border-rose-700 bg-rose-50/80 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 transition flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <LogOut className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
-                        <span>Đăng Xuất</span>
-                      </button>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUserDropdownOpen(false);
-                          onOpenLogin();
-                        }}
-                        className="w-full py-2 px-3 text-xs font-bold rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white transition flex items-center justify-center gap-2 shadow-sm"
-                      >
-                        <LogIn className="w-3.5 h-3.5" />
-                        <span>Đăng Nhập SQL Server</span>
-                      </button>
-                    )}
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full py-2 px-3 text-xs font-bold rounded-xl border border-rose-400 dark:border-rose-700 bg-rose-50/80 hover:bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-300 transition flex items-center justify-center gap-2 shadow-xs"
+                    >
+                      <LogOut className="w-3.5 h-3.5 text-rose-600 dark:text-rose-400" />
+                      <span>🚪 Đăng Xuất</span>
+                    </button>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* RFID Scanner button (Ẩn trên màn hình nhỏ/vừa, chỉ hiện trên màn hình rất lớn xl+) */}
+            {/* RFID Scanner button (chỉ hiện trên màn hình rất lớn xl+) */}
             <Authorize form="Frm_QuickCheckin" action="them" fallback={null}>
               <button
                 type="button"
                 onClick={onOpenRfidSimulator}
-                className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-industrial-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-industrial-700 border border-slate-200 dark:border-industrial-700 transition shadow-sm"
+                className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-industrial-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-industrial-700 border border-slate-200 dark:border-industrial-700 transition shadow-xs"
                 title="Mô phỏng quét thẻ RFID / Barcode (Phím tắt F2)"
               >
                 <ScanLine className="w-4 h-4 text-amber-500" />

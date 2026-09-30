@@ -10,10 +10,8 @@ import {
   X,
   Phone,
   Mail,
-  Building,
   KeyRound,
-  ShieldCheck,
-  Server
+  ShieldCheck
 } from 'lucide-react';
 
 interface RegisterModalProps {
@@ -36,8 +34,6 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     hoTen: '',
     dienThoai: '',
     email: '',
-    diaChi: '',
-    gateId: 1,
   });
 
   const [loading, setLoading] = useState(false);
@@ -46,11 +42,11 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === 'gateId' ? Number(value) : value,
+      [name]: value,
     }));
   };
 
@@ -83,8 +79,8 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
         hoTen: formData.hoTen.trim(),
         dienThoai: formData.dienThoai.trim() || undefined,
         email: formData.email.trim() || undefined,
-        diaChi: formData.diaChi.trim() || undefined,
-        gateId: formData.gateId,
+        diaChi: '',
+        gateId: 1,
       });
 
       setSuccessMessage(`Đăng ký thành công! Chào mừng ${res.userSession.hoTen}`);
@@ -115,10 +111,6 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
             </div>
             <div>
               <h3 className="text-base font-black tracking-tight uppercase">ĐĂNG KÝ TÀI KHOẢN MỚI</h3>
-              <p className="text-[11px] text-slate-300 flex items-center gap-1.5 mt-0.5">
-                <Server className="w-3 h-3 text-emerald-400" />
-                <span>Cấp phát tài khoản lái xe / nhân viên cổng vào SQL Server</span>
-              </p>
             </div>
           </div>
           <button
@@ -130,11 +122,11 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
           </button>
         </div>
 
-        {/* Body Form */}
-        <form onSubmit={handleSubmit} className="p-6 space-y-3.5 max-h-[80vh] overflow-y-auto">
+        {/* Body */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {/* Error Message */}
           {errorMessage && (
-            <div className="p-3 text-xs rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-start gap-2">
+            <div className="p-3 text-xs rounded-xl bg-rose-50 dark:bg-rose-950/60 border border-rose-300 dark:border-rose-800 text-rose-700 dark:text-rose-300 flex items-start gap-2 animate-in fade-in">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
               <span>{errorMessage}</span>
             </div>
@@ -142,7 +134,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
           {/* Success Message */}
           {successMessage && (
-            <div className="p-3 text-xs rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 flex items-start gap-2">
+            <div className="p-3 text-xs rounded-xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 flex items-start gap-2 animate-in fade-in">
               <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-500" />
               <span>{successMessage}</span>
             </div>
@@ -162,7 +154,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   name="tenDangNhap"
                   value={formData.tenDangNhap}
                   onChange={handleChange}
-                  placeholder="taixe_79c12345"
+                  placeholder="taixe_an"
                   className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-industrial-950 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
@@ -260,42 +252,6 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-industrial-950 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
-            </div>
-          </div>
-
-          {/* Gate Selection */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
-                Cổng / Làn Trực Mặc Định
-              </label>
-              <div className="relative">
-                <Building className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
-                <select
-                  name="gateId"
-                  value={formData.gateId}
-                  onChange={handleChange}
-                  className="w-full pl-9 pr-3 py-2 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-industrial-950 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                >
-                  <option value={1}>Cổng 01 (Gate 1 - Trạm Cân Chính)</option>
-                  <option value={2}>Cổng 02 (Gate 2 - Làn Xe Tải Nặng)</option>
-                  <option value={3}>Cổng 03 (Gate 3 - Xuất Container)</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
-                Địa Chỉ / Đơn Vị Vận Tải
-              </label>
-              <input
-                type="text"
-                name="diaChi"
-                value={formData.diaChi}
-                onChange={handleChange}
-                placeholder="Công ty CP Vận Tải Đông Đô"
-                className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-industrial-950 border border-slate-300 dark:border-industrial-700 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-              />
             </div>
           </div>
 
