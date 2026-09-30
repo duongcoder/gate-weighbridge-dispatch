@@ -66,12 +66,6 @@ export const VAI_TRO_LIST: VaiTro[] = [
     MoTa: 'Kiểm tra xe, cấp lốt vào cổng và quét nhận diện thẻ RFID',
     MauSac: 'sky',
   },
-  {
-    Id: 'ROLE_DISPATCH',
-    TenVaiTro: 'Nhân Viên Điều Độ',
-    MoTa: 'Tiếp nhận lệnh từ ERP, ghép xe và điều phối luồng xe tại trạm',
-    MauSac: 'purple',
-  },
 ];
 
 export const DEFAULT_PHAN_QUYEN: PhanQuyen[] = [
@@ -106,14 +100,6 @@ export const DEFAULT_PHAN_QUYEN: PhanQuyen[] = [
   { Id: 'pq-guard-6', VaiTroId: 'ROLE_GUARD', MaChucNang: 'Frm_QuickCheckin', Xem: true, Them: true, Sua: true, Xoa: false, BaoCao: false, Gate_Id: 'GATE_01' },
   { Id: 'pq-guard-7', VaiTroId: 'ROLE_GUARD', MaChucNang: 'Frm_UserPermission', Xem: false, Them: false, Sua: false, Xoa: false, BaoCao: false, Gate_Id: 'GATE_01' },
 
-  // 4. Nhân Viên Điều Độ (Dispatcher)
-  { Id: 'pq-disp-1', VaiTroId: 'ROLE_DISPATCH', MaChucNang: 'Frm_Command', Xem: true, Them: true, Sua: true, Xoa: false, BaoCao: true, Gate_Id: 'ALL' },
-  { Id: 'pq-disp-2', VaiTroId: 'ROLE_DISPATCH', MaChucNang: 'Frm_CardVehicle', Xem: true, Them: true, Sua: true, Xoa: false, BaoCao: true, Gate_Id: 'ALL' },
-  { Id: 'pq-disp-3', VaiTroId: 'ROLE_DISPATCH', MaChucNang: 'Frm_DispatchOrder', Xem: true, Them: true, Sua: true, Xoa: false, BaoCao: true, Gate_Id: 'ALL' },
-  { Id: 'pq-disp-4', VaiTroId: 'ROLE_DISPATCH', MaChucNang: 'Frm_ScaleCapture', Xem: true, Them: false, Sua: false, Xoa: false, BaoCao: false, Gate_Id: 'ALL' },
-  { Id: 'pq-disp-5', VaiTroId: 'ROLE_DISPATCH', MaChucNang: 'Frm_WeighingTicket', Xem: true, Them: false, Sua: false, Xoa: false, BaoCao: true, Gate_Id: 'ALL' },
-  { Id: 'pq-disp-6', VaiTroId: 'ROLE_DISPATCH', MaChucNang: 'Frm_QuickCheckin', Xem: true, Them: true, Sua: false, Xoa: false, BaoCao: false, Gate_Id: 'ALL' },
-  { Id: 'pq-disp-7', VaiTroId: 'ROLE_DISPATCH', MaChucNang: 'Frm_UserPermission', Xem: false, Them: false, Sua: false, Xoa: false, BaoCao: false, Gate_Id: 'ALL' },
 ];
 
 const DEFAULT_GUEST: NguoiDung = {
@@ -380,7 +366,6 @@ class AuthStoreManager {
       case 1: return 'ROLE_ADMIN';
       case 2: return 'ROLE_SCALE';
       case 3: return 'ROLE_GUARD';
-      case 4: return 'ROLE_DISPATCH';
       default: return 'ROLE_GUARD';
     }
   }
@@ -390,7 +375,6 @@ class AuthStoreManager {
       case 1: return '👑';
       case 2: return '⚖️';
       case 3: return '🛡️';
-      case 4: return '🚚';
       default: return '👤';
     }
   }

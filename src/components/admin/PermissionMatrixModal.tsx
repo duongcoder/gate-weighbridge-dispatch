@@ -111,7 +111,6 @@ export const PermissionMatrixModal: React.FC<PermissionMatrixModalProps> = ({
       case 'ROLE_ADMIN': return 1;
       case 'ROLE_SCALE': return 2;
       case 'ROLE_GUARD': return 3;
-      case 'ROLE_DISPATCH': return 4;
       default: return 2;
     }
   };
