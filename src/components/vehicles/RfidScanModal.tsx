@@ -53,11 +53,10 @@ export const RfidScanModal: React.FC<RfidScanModalProps> = ({
       onClose={onClose}
       title={
         <div className="flex items-center gap-2">
-          <ScanLine className="w-5 h-5 text-amber-500 animate-pulse" />
-          <span>Mô Phỏng Đầu Đọc Thẻ RFID / Barcode Cổng</span>
+          <ScanLine className="w-5 h-5 text-amber-500 animate-pulse shrink-0" />
+          <span>Đầu Đọc Thẻ RFID</span>
         </div>
       }
-      subtitle="Quét thẻ từ tần số cao UHF RFID hoặc quét mã vạch nhận diện tự động"
       maxWidth="md"
     >
       <div className="space-y-4">

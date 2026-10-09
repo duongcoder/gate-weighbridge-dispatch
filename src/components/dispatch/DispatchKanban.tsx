@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../store/dispatchStore';
-import { GateStep, OrderTrip } from '../../types';
+import { OrderTrip } from '../../types';
 import { TripCard } from './TripCard';
 import { TripDetailModal } from './TripDetailModal';
 import { DispatchTableView } from './DispatchTableView';
@@ -9,7 +9,6 @@ import { formatWeight } from '../../utils/formatters';
 import { Authorize } from '../common/Authorize';
 import { 
   Plus, 
-  Columns, 
   TableProperties, 
   List, 
   Filter 
@@ -22,39 +21,6 @@ interface DispatchKanbanProps {
   onAttachVehicle: (orderId: string) => void;
 }
 
-const KANBAN_STEPS: { key: GateStep; title: string; subtitle: string; color: string }[] = [
-  {
-    key: 'GATE_IN',
-    title: '1. Chờ Vào Cổng',
-    subtitle: 'Quẹt RFID Barrier',
-    color: 'border-t-sky-500',
-  },
-  {
-    key: 'SCALE_1',
-    title: '2. Bàn Cân Lần 1',
-    subtitle: 'Gross / Tare #1',
-    color: 'border-t-amber-500',
-  },
-  {
-    key: 'LOADING_UNLOADING',
-    title: '3. Đang Bốc Dỡ',
-    subtitle: 'Kho bãi / Silo',
-    color: 'border-t-purple-500',
-  },
-  {
-    key: 'SCALE_2',
-    title: '4. Bàn Cân Lần 2',
-    subtitle: 'Tare / Gross #2',
-    color: 'border-t-indigo-500',
-  },
-  {
-    key: 'COMPLETED',
-    title: '5. Hoàn Tất',
-    subtitle: 'In phiếu & Ra cổng',
-    color: 'border-t-emerald-500',
-  },
-];
-
 export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
   onOpenWizard,
   onOpenWeighing,
@@ -62,13 +28,13 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
   onAttachVehicle,
 }) => {
   const { trips, orders, commands, searchQuery, completeOrder } = useStore();
-  const [viewMode, setViewMode] = useState<'KANBAN' | 'TABLE' | 'LIST'>('KANBAN');
+  const [viewMode, setViewMode] = useState<'TABLE' | 'LIST'>('TABLE');
   const [relationFilter, setRelationFilter] = useState<string>('ALL');
 
   // Selected trip for full detail modal
   const [detailTrip, setDetailTrip] = useState<OrderTrip | null>(null);
 
-  // 1. Filter individual trips for KANBAN & TABLE views
+  // 1. Filter individual trips for TABLE view
   const filteredTrips = useMemo(() => {
     return trips.filter((trip) => {
       const order = orders.find((o) => o.id === trip.orderId);
@@ -169,24 +135,9 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {/* 3-Way View Switcher */}
+          {/* View Switcher: Table View & Grouped View */}
           <div className="flex items-center bg-slate-100 dark:bg-industrial-950 p-1 rounded-lg border border-slate-200 dark:border-industrial-800">
-            {/* 1. Kanban Board */}
-            <button
-              type="button"
-              onClick={() => setViewMode('KANBAN')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition ${
-                viewMode === 'KANBAN'
-                  ? 'bg-white dark:bg-industrial-800 text-amber-600 dark:text-amber-400 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="Xem dạng bảng Kanban 5 cột quy trình"
-            >
-              <Columns className="w-3.5 h-3.5" />
-              <span>Bảng Kanban</span>
-            </button>
-
-            {/* 2. Dispatch Table View */}
+            {/* 1. Dispatch Table View */}
             <button
               type="button"
               onClick={() => setViewMode('TABLE')}
@@ -201,7 +152,7 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
               <span>Bảng Danh Sách Xe</span>
             </button>
 
-            {/* 3. Grouped by Order */}
+            {/* 2. Grouped by Order */}
             <button
               type="button"
               onClick={() => setViewMode('LIST')}
@@ -231,60 +182,7 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
         </div>
       </div>
 
-      {/* =========================================================================
-          VIEW 1: KANBAN BOARD (Compact 5-column layout fitting viewport 1366px - 1920px)
-          ========================================================================= */}
-      {viewMode === 'KANBAN' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-5 gap-3 w-full min-w-0 items-start">
-          {KANBAN_STEPS.map((col) => {
-            const colTrips = filteredTrips.filter((t) => t.step === col.key);
-
-            return (
-              <div
-                key={col.key}
-                className={`bg-slate-50/80 dark:bg-industrial-950/80 border border-slate-200 dark:border-industrial-800 rounded-xl p-2.5 space-y-2.5 min-w-0 w-full flex flex-col border-t-4 ${col.color}`}
-              >
-                {/* Column Header */}
-                <div className="flex items-center justify-between pb-1 border-b border-slate-200/60 dark:border-industrial-800">
-                  <div className="min-w-0">
-                    <h3 className="font-bold text-xs text-industrial-900 dark:text-white uppercase tracking-wider truncate">
-                      {col.title}
-                    </h3>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
-                      {col.subtitle}
-                    </p>
-                  </div>
-                  <span className="font-mono text-xs font-bold px-2 py-0.5 rounded-full bg-white dark:bg-industrial-800 border border-slate-200 dark:border-industrial-700 shrink-0 ml-1">
-                    {colTrips.length}
-                  </span>
-                </div>
-
-                {/* Column Trip Cards List */}
-                <div className="space-y-2.5 max-h-[72vh] overflow-y-auto pr-0.5">
-                  {colTrips.length === 0 ? (
-                    <div className="py-6 text-center text-xs text-slate-400 border border-dashed border-slate-200 dark:border-industrial-800 rounded-lg">
-                      Không có xe
-                    </div>
-                  ) : (
-                    colTrips.map((trip) => (
-                      <TripCard
-                        key={trip.id}
-                        trip={trip}
-                        onOpenWeighing={onOpenWeighing}
-                        onOpenTicket={onOpenTicket}
-                        onSelectTrip={(t) => setDetailTrip(t)}
-                        onAttachVehicleModal={onAttachVehicle}
-                      />
-                    ))
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* =========================================================================
+            {/* =========================================================================
           VIEW 2: DISPATCH TABLE VIEW (High-density flat view with Mini Stepper)
           ========================================================================= */}
       {viewMode === 'TABLE' && (

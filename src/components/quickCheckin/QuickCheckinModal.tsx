@@ -142,7 +142,7 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
               }}
               className="flex items-center gap-2 px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded-lg shadow transition"
             >
-              <span>Xem Trên Bảng Kanban Điều Phối</span>
+              <span>Xem Trên Bảng Điều Phối</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </div>
