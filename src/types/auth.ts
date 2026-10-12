@@ -14,7 +14,8 @@ export type MaChucNang =
   | 'Frm_ScaleCapture'     // Ghi nhận bàn cân
   | 'Frm_WeighingTicket'   // In phiếu cân
   | 'Frm_QuickCheckin'     // Khai báo nhanh cổng
-  | 'Frm_UserPermission';  // Quản trị phân quyền
+  | 'Frm_UserPermission'   // Quản trị phân quyền
+  | 'Frm_Reports';         // Báo cáo & Thống kê
 
 export type PermissionAction = 'xem' | 'them' | 'sua' | 'xoa' | 'baoCao';
 

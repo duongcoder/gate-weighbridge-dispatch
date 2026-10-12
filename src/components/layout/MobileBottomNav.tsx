@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '../../store/dispatchStore';
 import { useAuthStore } from '../../store/authStore';
-import { FileText, CreditCard, Share2, Zap, ScanLine } from 'lucide-react';
+import { FileText, CreditCard, Share2, Zap, ScanLine, BarChart3 } from 'lucide-react';
 
 interface MobileBottomNavProps {
   onOpenQuickCheckin: () => void;
@@ -19,6 +19,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const canViewCommands = hasPermission('Frm_Command', 'xem');
   const canViewVehicles = hasPermission('Frm_CardVehicle', 'xem');
   const canViewDispatch = hasPermission('Frm_DispatchOrder', 'xem');
+  const canViewReports = hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao');
   const canAddCheckin = hasPermission('Frm_QuickCheckin', 'them');
   const canScan = hasPermission('Frm_QuickCheckin', 'them') || hasPermission('Frm_CardVehicle', 'them');
 
@@ -91,6 +92,22 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
               )}
             </div>
             <span>Ghép Lệnh</span>
+          </button>
+        )}
+
+        {/* Reports Tab */}
+        {canViewReports && (
+          <button
+            type="button"
+            onClick={() => setActiveTab('REPORT')}
+            className={`flex flex-col items-center justify-center py-2 px-2 text-[11px] font-medium transition ${
+              activeTab === 'REPORT'
+                ? 'text-amber-500 font-bold'
+                : 'text-slate-500 dark:text-slate-400'
+            }`}
+          >
+            <BarChart3 className="w-5 h-5 mb-0.5" />
+            <span>Báo Cáo</span>
           </button>
         )}
 

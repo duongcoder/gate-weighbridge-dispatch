@@ -45,6 +45,12 @@ export const CHUC_NANG_LIST: ChucNang[] = [
     MoTa: 'Cấu hình quyền Xem, Thêm, Sửa, Xóa, Báo cáo cho các vai trò',
     Nhom: 'Hệ thống',
   },
+  {
+    MaChucNang: 'Frm_Reports',
+    TenChucNang: 'Báo Cáo & Thống Kê',
+    MoTa: 'Nhật ký cân xe, báo cáo sản lượng Net và phân tích trạm cân',
+    Nhom: 'Trạm cân điện tử',
+  },
 ];
 
 export const VAI_TRO_LIST: VaiTro[] = [
@@ -86,6 +92,7 @@ export const DEFAULT_PHAN_QUYEN: PhanQuyen[] = [
   { Id: 'pq-scale-1', VaiTroId: 'ROLE_SCALE', MaChucNang: 'Frm_Command', Xem: true, Them: false, Sua: false, Xoa: false, BaoCao: false, Gate_Id: 'GATE_01' },
   { Id: 'pq-scale-2', VaiTroId: 'ROLE_SCALE', MaChucNang: 'Frm_CardVehicle', Xem: true, Them: false, Sua: false, Xoa: false, BaoCao: false, Gate_Id: 'GATE_01' },
   { Id: 'pq-scale-3', VaiTroId: 'ROLE_SCALE', MaChucNang: 'Frm_DispatchOrder', Xem: true, Them: false, Sua: false, Xoa: false, BaoCao: true, Gate_Id: 'GATE_01' },
+  { Id: 'pq-scale-4', VaiTroId: 'ROLE_SCALE', MaChucNang: 'Frm_Reports', Xem: true, Them: false, Sua: false, Xoa: false, BaoCao: true, Gate_Id: 'GATE_01' },
   { Id: 'pq-scale-4', VaiTroId: 'ROLE_SCALE', MaChucNang: 'Frm_ScaleCapture', Xem: true, Them: true, Sua: true, Xoa: false, BaoCao: true, Gate_Id: 'GATE_01' },
   { Id: 'pq-scale-5', VaiTroId: 'ROLE_SCALE', MaChucNang: 'Frm_WeighingTicket', Xem: true, Them: true, Sua: false, Xoa: false, BaoCao: true, Gate_Id: 'GATE_01' },
   { Id: 'pq-scale-6', VaiTroId: 'ROLE_SCALE', MaChucNang: 'Frm_QuickCheckin', Xem: true, Them: false, Sua: false, Xoa: false, BaoCao: false, Gate_Id: 'GATE_01' },

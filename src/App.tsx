@@ -21,6 +21,7 @@ import { RfidScanModal } from './components/vehicles/RfidScanModal';
 
 // Tab 3: Dispatch & Weighing Mapping
 import { DispatchKanban } from './components/dispatch/DispatchKanban';
+import { ReportsView } from './components/reports/ReportsView';
 import { DispatchWizard } from './components/dispatch/DispatchWizard';
 import { WeighingModal } from './components/dispatch/WeighingModal';
 import { WeighingTicketModal } from './components/dispatch/WeighingTicketModal';
@@ -52,7 +53,7 @@ export function App() {
     findVehicleByCardOrPlate 
   } = useStore();
 
-  const { currentUser, isAuthenticated, hasPermission, initAuthFromToken } = useAuthStore();
+  const { currentUser, liveUserSession, isAuthenticated, hasPermission, initAuthFromToken } = useAuthStore();
 
   // Modal visibility states
   const [commandModalOpen, setCommandModalOpen] = useState(false);
@@ -122,10 +123,12 @@ export function App() {
   // OPERATIONAL REQUIREMENT: ACTIVE TAB AUTO-FALLBACK ON USER SWITCH
   // -------------------------------------------------------------
   useEffect(() => {
-    const validTabs: ('COMMANDS' | 'VEHICLES' | 'DISPATCH')[] = [];
+    const canViewReports = hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao') || currentUser.VaiTroId === 'ROLE_ADMIN' || liveUserSession?.vaiTroId === 1;
+    const validTabs: ('COMMANDS' | 'VEHICLES' | 'DISPATCH' | 'REPORT')[] = [];
     if (hasPermission('Frm_Command', 'xem')) validTabs.push('COMMANDS');
     if (hasPermission('Frm_CardVehicle', 'xem')) validTabs.push('VEHICLES');
     if (hasPermission('Frm_DispatchOrder', 'xem')) validTabs.push('DISPATCH');
+    if (canViewReports) validTabs.push('REPORT');
 
     if (validTabs.length > 0 && !validTabs.includes(activeTab)) {
       setActiveTab(validTabs[0]);
@@ -306,6 +309,10 @@ export function App() {
                 onOpenTicket={(trip) => setActiveTicketTrip(trip)}
                 onAttachVehicle={(orderId) => setAttachVehicleOrderId(orderId)}
               />
+            )}
+
+            {activeTab === 'REPORT' && (hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao') || currentUser.VaiTroId === 'ROLE_ADMIN' || liveUserSession?.vaiTroId === 1) && (
+              <ReportsView />
             )}
           </>
         )}

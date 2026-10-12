@@ -49,7 +49,7 @@ class DispatchStoreManager {
   private orders: DispatchOrder[] = loadStorage(STORAGE_KEYS.ORDERS, INITIAL_ORDERS);
   private trips: OrderTrip[] = loadStorage(STORAGE_KEYS.TRIPS, INITIAL_TRIPS);
   private darkMode: boolean = loadStorage(STORAGE_KEYS.DARK_MODE, true);
-  private activeTab: 'COMMANDS' | 'VEHICLES' | 'DISPATCH' = 'DISPATCH';
+  private activeTab: 'COMMANDS' | 'VEHICLES' | 'DISPATCH' | 'REPORT' = 'DISPATCH';
   private searchQuery: string = '';
   
   // Hardware Scale Simulation State
@@ -102,7 +102,7 @@ class DispatchStoreManager {
   }
 
   // UI state mutators
-  setActiveTab(tab: 'COMMANDS' | 'VEHICLES' | 'DISPATCH') {
+  setActiveTab(tab: 'COMMANDS' | 'VEHICLES' | 'DISPATCH' | 'REPORT') {
     this.activeTab = tab;
     this.notify();
   }
@@ -559,7 +559,7 @@ export function useStore() {
 
   return {
     ...state,
-    setActiveTab: (tab: 'COMMANDS' | 'VEHICLES' | 'DISPATCH') => dispatchStore.setActiveTab(tab),
+    setActiveTab: (tab: 'COMMANDS' | 'VEHICLES' | 'DISPATCH' | 'REPORT') => dispatchStore.setActiveTab(tab),
     setSearchQuery: (q: string) => dispatchStore.setSearchQuery(q),
     toggleDarkMode: () => dispatchStore.toggleDarkMode(),
     resetAllData: () => dispatchStore.resetAllData(),

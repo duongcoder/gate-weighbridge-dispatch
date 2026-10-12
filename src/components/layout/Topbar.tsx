@@ -3,6 +3,7 @@ import { useStore } from '../../store/dispatchStore';
 import { useAuthStore } from '../../store/authStore';
 import { 
   Truck, 
+  BarChart3,
   FileText, 
   CreditCard, 
   Share2, 
@@ -88,6 +89,7 @@ export const Topbar: React.FC<TopbarProps> = ({
   const canViewVehicles = hasPermission('Frm_CardVehicle', 'xem');
   const canViewDispatch = hasPermission('Frm_DispatchOrder', 'xem');
   const isAdmin = currentUser.VaiTroId === 'ROLE_ADMIN' || liveUserSession?.vaiTroId === 1;
+  const canViewReports = hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao') || isAdmin;
 
   const roleBadgeColors: Record<string, string> = {
     ROLE_ADMIN: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
@@ -365,6 +367,21 @@ export const Topbar: React.FC<TopbarProps> = ({
                     {activeTripsCount} Xe
                   </span>
                 )}
+              </button>
+            )}
+
+            {canViewReports && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('REPORT')}
+                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs sm:text-sm font-bold transition-all ${
+                  activeTab === 'REPORT'
+                    ? 'bg-white dark:bg-industrial-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                    : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+              >
+                <BarChart3 className="w-4 h-4" />
+                <span>BÁO CÁO</span>
               </button>
             )}
           </nav>
