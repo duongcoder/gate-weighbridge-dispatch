@@ -31,16 +31,6 @@
   background: rgba(100, 116, 139, 0.6);
 }
 
-/* Digital Scale LED simulation styles */
-.scale-led-display {
-  font-family: 'JetBrains Mono', monospace;
-  text-shadow: 0 0 10px rgba(16, 185, 129, 0.45);
-}
-
-.scale-amber-display {
-  font-family: 'JetBrains Mono', monospace;
-  text-shadow: 0 0 10px rgba(245, 158, 11, 0.45);
-}
 
 /* Touch friendly minimum heights for mobile buttons */
 @media (max-width: 640px) {

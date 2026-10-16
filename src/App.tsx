@@ -7,7 +7,6 @@ import { Command, VehicleCard, OrderTrip } from './types';
 
 // Layout & Navigation
 import { Topbar } from './components/layout/Topbar';
-import { ScaleIndicator } from './components/layout/ScaleIndicator';
 import { MobileBottomNav } from './components/layout/MobileBottomNav';
 
 // Tab 1: Commands
@@ -228,9 +227,6 @@ export function App() {
         onOpenLogin={() => setLoginModalOpen(true)}
       />
 
-      {/* 2. Live Weighbridge Digital Scale Indicator Bar */}
-      <ScaleIndicator />
-
       {/* 3. Global Floating Toast Banner (Cố định ở Bottom-Right, auto-dismiss 3s, không che Topbar) */}
       {toastMessage && (
         <div className="fixed bottom-6 right-6 z-50 bg-slate-900/95 dark:bg-industrial-800/95 text-white font-medium text-xs sm:text-sm px-4 py-3 rounded-2xl shadow-2xl border border-slate-700/80 dark:border-industrial-600 flex items-center gap-3 animate-in slide-in-from-bottom-5 duration-200 max-w-md">
@@ -247,7 +243,7 @@ export function App() {
       )}
 
       {/* 4. Main Body Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-5">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         {!isAuthenticated ? (
           <div className="py-20 text-center space-y-4">
             <div className="w-16 h-16 rounded-2xl bg-amber-100 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 flex items-center justify-center mx-auto text-2xl font-bold">

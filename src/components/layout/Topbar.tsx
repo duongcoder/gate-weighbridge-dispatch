@@ -311,7 +311,7 @@ export const Topbar: React.FC<TopbarProps> = ({
         </div>
 
         {/* Bottom Bar: Search + Main Navigation Tabs (Protected by RBAC) */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between pb-2.5 pt-1 gap-2.5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between pb-3 pt-1.5 gap-3">
           {/* Main 3 Tabs Switcher */}
           <nav className="hidden md:flex items-center p-1 bg-slate-100 dark:bg-industrial-950 rounded-xl border border-slate-200 dark:border-industrial-800">
             {canViewCommands && (
