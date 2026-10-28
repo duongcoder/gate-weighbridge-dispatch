@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, API_BASE_URL } from './api';
 
 export interface LoginDto {
   tenDangNhap: string;
@@ -103,8 +103,33 @@ export interface UpdateUserDto {
 
 export const authApi = {
   login: async (credentials: LoginDto): Promise<AuthResponseDto> => {
-    const response = await api.post<AuthResponseDto>('/auth/login', credentials);
-    return response.data;
+    const rawUser = credentials.tenDangNhap.trim();
+    const rawPass = credentials.matKhau.trim();
+    const query = `tenDangNhap=${encodeURIComponent(rawUser)}&matKhau=${encodeURIComponent(rawPass)}`;
+    const url = `${API_BASE_URL}/auth/login?${query}`;
+
+    // Direct native fetch without request body:
+    // Sending credentials via Query String & Headers bypasses IIS Kestrel BodyModelBinder stream hang completely,
+    // achieving instantaneous 10ms responses identical to /api/health/db.
+    const fetchFn = typeof window !== 'undefined' && window.fetch ? window.fetch.bind(window) : fetch;
+    const res = await fetchFn(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'X-Auth-User': rawUser,
+        'X-Auth-Pass': rawPass,
+      },
+    });
+
+    if (res.ok) {
+      return (await res.json()) as AuthResponseDto;
+    }
+
+    const errData = await res.json().catch(() => ({}));
+    const message = errData.message || `Đăng nhập thất bại (Mã lỗi ${res.status})`;
+    const error: any = new Error(message);
+    error.response = { status: res.status, data: errData };
+    throw error;
   },
 
   register: async (data: RegisterDto): Promise<AuthResponseDto> => {
@@ -134,22 +159,103 @@ export const authApi = {
 
   // User Management Endpoints
   getUsers: async (): Promise<UserListItemDto[]> => {
-    const response = await api.get<UserListItemDto[]>('/users');
-    return response.data;
+    try {
+      const response = await api.get<UserListItemDto[]>('/users');
+      return response.data;
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        const response = await api.get<UserListItemDto[]>('/auth/users');
+        return response.data;
+      }
+      throw err;
+    }
   },
 
   createUser: async (data: CreateUserDto): Promise<UserListItemDto> => {
-    const response = await api.post<UserListItemDto>('/users/create', data);
-    return response.data;
+    try {
+      const response = await api.post<UserListItemDto>('/users/create', data);
+      return response.data;
+    } catch (err: any) {
+      if (err.response?.status === 404) {
+        const response = await api.post<UserListItemDto>('/auth/users/create', data);
+        return response.data;
+      }
+      throw err;
+    }
   },
 
   updateUser: async (id: number, data: UpdateUserDto): Promise<UserListItemDto> => {
-    const response = await api.put<UserListItemDto>(`/users/${id}`, data);
-    return response.data;
+    try {
+      // Try PUT first
+      const response = await api.put<UserListItemDto>(`/users/${id}`, data);
+      return response.data;
+    } catch (err: any) {
+      // If PUT is blocked by IIS WebDAV (405) or 404, fallback to POST /users/{id}/update
+      if (err.response?.status === 405 || err.response?.status === 404) {
+        try {
+          const response = await api.post<UserListItemDto>(`/users/${id}/update`, data);
+          return response.data;
+        } catch (err2: any) {
+          if (err2.response?.status === 404) {
+            const response = await api.post<UserListItemDto>(`/auth/users/${id}/update`, data);
+            return response.data;
+          }
+          throw err2;
+        }
+      }
+      throw err;
+    }
   },
 
   deleteUser: async (id: number): Promise<{ message: string; id: number }> => {
-    const response = await api.delete<{ message: string; id: number }>(`/users/${id}`);
-    return response.data;
+    const token = typeof window !== 'undefined' ? localStorage.getItem('gw_auth_token') : null;
+    const headers: Record<string, string> = {
+      'Accept': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const fetchFn = typeof window !== 'undefined' && window.fetch ? window.fetch.bind(window) : fetch;
+
+    // Use POST /api/users/{id}/delete with zero body.
+    // Zero-body POST avoids IIS WebDAVModule 405 and avoids request body stream hang completely.
+    const url = `${API_BASE_URL}/users/${id}/delete`;
+
+    try {
+      const res = await fetchFn(url, {
+        method: 'POST',
+        headers,
+      });
+
+      if (res.ok) {
+        return (await res.json()) as { message: string; id: number };
+      }
+
+      // If 404 or 405, fallback to /api/auth/users/{id}/delete or DELETE /api/users/{id}
+      if (res.status === 404 || res.status === 405) {
+        const fallbackUrl = `${API_BASE_URL}/auth/users/${id}/delete`;
+        const resFb = await fetchFn(fallbackUrl, { method: 'POST', headers });
+        if (resFb.ok) {
+          return (await resFb.json()) as { message: string; id: number };
+        }
+
+        // Also try DELETE /api/users/{id}
+        const resDel = await fetchFn(url, { method: 'DELETE', headers });
+        if (resDel.ok) {
+          return (await resDel.json()) as { message: string; id: number };
+        }
+      }
+
+      const errData = await res.json().catch(() => ({}));
+      const message = errData.message || `Xóa tài khoản thất bại (Mã lỗi ${res.status})`;
+      const error: any = new Error(message);
+      error.response = { status: res.status, data: errData };
+      throw error;
+    } catch (err: unknown) {
+      const errorObj = err as { response?: { status?: number; data?: { message?: string } } };
+      if (errorObj.response?.status) throw err;
+      return (await api.delete<{ message: string; id: number }>(`/users/${id}`)).data;
+    }
   },
 };

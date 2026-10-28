@@ -1,10 +1,11 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 
-export const API_BASE_URL = 'http://localhost:5000/api';
+export const API_BASE_URL = import.meta.env.PROD ? '/api' : (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api');
 
 export const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 15000,
+  timeout: 30000,
+  adapter: 'fetch',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -17,6 +18,11 @@ api.interceptors.request.use(
       const token = localStorage.getItem('gw_auth_token');
       if (token && config.headers) {
         config.headers.Authorization = `Bearer ${token}`;
+      }
+      // Ensure Content-Length is never manually forced, letting browser Fetch handle framing
+      if (config.headers) {
+        delete (config.headers as Record<string, unknown>)['Content-Length'];
+        delete (config.headers as Record<string, unknown>)['content-length'];
       }
     } catch (err) {
       console.error('Error reading auth token:', err);
