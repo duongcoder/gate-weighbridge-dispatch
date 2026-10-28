@@ -46,7 +46,7 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
     }
   }, [isOpen, commands]);
 
-  // Real-time lookup as user types plate or scans RFID
+  // Real-time lookup as user types plate
   const handleInputChange = (val: string) => {
     const clean = val.toUpperCase();
     setInputPlateOrCard(clean);
@@ -68,7 +68,7 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputPlateOrCard.trim() || !selectedCommandId) {
-      alert('Vui lòng nhập Biển số/Mã thẻ và chọn Lệnh vận chuyển.');
+      alert('Vui lòng nhập Biển số xe và chọn Lệnh vận chuyển.');
       return;
     }
 
@@ -77,7 +77,7 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
     // If new vehicle, register immediately
     if (!vehicleIdToUse) {
       const newVeh = addVehicle({
-        cardNo: `RFID-${Math.floor(1000 + Math.random() * 9000)}`,
+        cardNo: `XE-${inputPlateOrCard.trim().toUpperCase().replace(/[^A-Z0-9]/g, '')}`,
         plateNumber: inputPlateOrCard.trim().toUpperCase(),
         driverName: driverName.trim() || 'Tài xế vãng lai',
         driverPhone: driverPhone.trim(),
@@ -153,7 +153,7 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
           {/* Plate or Card No */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-              Biển Số Xe hoặc Quẹt Thẻ RFID Cổng
+              Biển Số Xe Vào Trạm
             </label>
             <div className="relative">
               <input
@@ -162,7 +162,7 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
                 required
                 value={inputPlateOrCard}
                 onChange={(e) => handleInputChange(e.target.value)}
-                placeholder="VD: 29H-123.45 hoặc RFID-8831"
+                placeholder="VD: 29H-123.45"
                 className="w-full pl-3 pr-24 py-2.5 text-base font-mono font-bold rounded-lg border-2 border-amber-500 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white uppercase focus:ring-4 focus:ring-amber-500/20 focus:outline-none"
               />
               {isExistingVehicle && (

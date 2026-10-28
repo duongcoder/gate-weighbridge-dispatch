@@ -90,7 +90,7 @@ export const INITIAL_COMMANDS: Command[] = [
 export const INITIAL_VEHICLES: VehicleCard[] = [
   {
     id: 'veh-1',
-    cardNo: 'RFID-8831',
+    cardNo: 'XE-8831',
     plateNumber: '29H-123.45',
     trailerPlate: '29R-012.34',
     driverName: 'Nguyễn Văn Hùng',
@@ -103,7 +103,7 @@ export const INITIAL_VEHICLES: VehicleCard[] = [
   },
   {
     id: 'veh-2',
-    cardNo: 'RFID-7720',
+    cardNo: 'XE-7720',
     plateNumber: '29C-982.11',
     driverName: 'Nguyễn Hữu Thắng',
     driverPhone: '0983.112.233',
@@ -115,7 +115,7 @@ export const INITIAL_VEHICLES: VehicleCard[] = [
   },
   {
     id: 'veh-3',
-    cardNo: 'RFID-6615',
+    cardNo: 'XE-6615',
     plateNumber: '51D-456.78',
     trailerPlate: '51R-883.21',
     driverName: 'Trần Quốc Bảo',
@@ -128,7 +128,7 @@ export const INITIAL_VEHICLES: VehicleCard[] = [
   },
   {
     id: 'veh-4',
-    cardNo: 'RFID-9942',
+    cardNo: 'XE-9942',
     plateNumber: '14C-331.02',
     driverName: 'Lê Văn Toàn',
     driverPhone: '0976.222.111',
@@ -140,7 +140,7 @@ export const INITIAL_VEHICLES: VehicleCard[] = [
   },
   {
     id: 'veh-5',
-    cardNo: 'RFID-5511',
+    cardNo: 'XE-5511',
     plateNumber: '89C-229.40',
     driverName: 'Phạm Thành Long',
     driverPhone: '0936.888.999',
@@ -152,7 +152,7 @@ export const INITIAL_VEHICLES: VehicleCard[] = [
   },
   {
     id: 'veh-6',
-    cardNo: 'RFID-3304',
+    cardNo: 'XE-3304',
     plateNumber: '36H-551.29',
     driverName: 'Vũ Minh Đức',
     driverPhone: '0915.667.889',
@@ -163,7 +163,7 @@ export const INITIAL_VEHICLES: VehicleCard[] = [
   },
   {
     id: 'veh-7',
-    cardNo: 'RFID-4488',
+    cardNo: 'XE-4488',
     plateNumber: '98C-104.77',
     driverName: 'Đỗ Tuấn Kiệt',
     driverPhone: '0988.441.223',
@@ -174,7 +174,7 @@ export const INITIAL_VEHICLES: VehicleCard[] = [
   },
   {
     id: 'veh-8',
-    cardNo: 'RFID-1122',
+    cardNo: 'XE-1122',
     plateNumber: '34C-871.95',
     driverName: 'Ngô Đức Nam',
     driverPhone: '0942.333.555',
@@ -243,7 +243,7 @@ export const INITIAL_TRIPS: OrderTrip[] = [
     driverPhone: '0976.222.111',
     transportCompany: 'Than Quảng Ninh Logistics',
     step: 'GATE_IN',
-    notes: 'Vừa quét thẻ tại Barrier Cổng vào.',
+    notes: 'Vừa nhận diện biển số tại Barrier Cổng vào.',
   },
 
   // Trip for Order 3 [N-1]: 2 Lệnh xuất (Thép CMD-102 + Tro bay CMD-107) trên 1 Xe 89C-229.40

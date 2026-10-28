@@ -180,16 +180,18 @@ class DispatchStoreManager {
   }
 
   // -------------------------------------------------------------
-  // VEHICLES & RFID CARDS CRUD
+  // VEHICLES CRUD
   // -------------------------------------------------------------
   addVehicle(veh: Omit<VehicleCard, 'id' | 'lastActiveAt' | 'activeTripId'>) {
     const newId = `veh-${Date.now()}`;
+    const cleanPlate = veh.plateNumber.trim().toUpperCase();
+    const autoCardNo = veh.cardNo?.trim().toUpperCase() || `XE-${cleanPlate.replace(/[^A-Z0-9]/g, '')}`;
     const newVehicle: VehicleCard = {
       ...veh,
       id: newId,
-      plateNumber: veh.plateNumber.trim().toUpperCase(),
+      plateNumber: cleanPlate,
       trailerPlate: veh.trailerPlate?.trim().toUpperCase(),
-      cardNo: veh.cardNo.trim().toUpperCase(),
+      cardNo: autoCardNo,
       lastActiveAt: new Date().toISOString(),
     };
     this.vehicles = [newVehicle, ...this.vehicles];

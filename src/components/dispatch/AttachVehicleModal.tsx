@@ -73,7 +73,7 @@ export const AttachVehicleModal: React.FC<AttachVehicleModalProps> = ({
                       {veh.plateNumber}
                     </span>
                     <div className="text-xs text-slate-500">
-                      Lái xe: {veh.driverName} | {veh.cardNo}
+                      Lái xe: {veh.driverName} ({veh.driverPhone || '---'})
                     </div>
                   </div>
                   <div className="font-mono text-xs font-bold text-slate-600 dark:text-slate-300">

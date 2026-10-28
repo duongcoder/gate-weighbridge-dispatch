@@ -93,8 +93,8 @@ export const TripDetailModal: React.FC<TripDetailModalProps> = ({
               Thông Tin Phương Tiện & Lái Xe
             </h4>
             <div className="flex justify-between py-0.5">
-              <span className="text-slate-500">Mã Thẻ RFID:</span>
-              <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{vehicle?.cardNo || '---'}</span>
+              <span className="text-slate-500">Biển Số Xe:</span>
+              <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{trip.plateNumber}</span>
             </div>
             <div className="flex justify-between py-0.5">
               <span className="text-slate-500">Rơ-moóc:</span>

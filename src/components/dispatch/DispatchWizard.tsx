@@ -274,7 +274,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                   type="text"
                   value={vehSearch}
                   onChange={(e) => setVehSearch(e.target.value)}
-                  placeholder="Lọc biển số, mã thẻ RFID, tên tài xế..."
+                  placeholder="Lọc biển số xe, tên tài xế..."
                   className="w-full pl-8 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500"
                 />
               </div>
@@ -315,9 +315,6 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                           <div className="flex items-center gap-2">
                             <span className="font-mono font-black text-sm text-industrial-900 dark:text-white bg-slate-100 dark:bg-industrial-800 px-2 py-0.5 rounded">
                               {veh.plateNumber}
-                            </span>
-                            <span className="text-[11px] font-mono text-amber-600 dark:text-amber-400">
-                              🏷️ {veh.cardNo}
                             </span>
                           </div>
                           <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">

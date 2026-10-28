@@ -11,8 +11,8 @@ export const CHUC_NANG_LIST: ChucNang[] = [
   },
   {
     MaChucNang: 'Frm_CardVehicle',
-    TenChucNang: 'Quản lý Thẻ RFID & Phương Tiện',
-    MoTa: 'Đăng ký xe, gắn thẻ từ RFID, cài đặt bì định mức và khóa xe',
+    TenChucNang: 'Quản lý Phương Tiện',
+    MoTa: 'Đăng ký xe, cài đặt bì định mức và quản lý danh sách xe',
     Nhom: 'Nghiệp vụ vận tải',
   },
   {
@@ -36,7 +36,7 @@ export const CHUC_NANG_LIST: ChucNang[] = [
   {
     MaChucNang: 'Frm_QuickCheckin',
     TenChucNang: 'Khai Báo Nhanh Tại Barrier',
-    MoTa: 'Quét thẻ hoặc nhập biển số để cấp lốt vào cổng nhanh',
+    MoTa: 'Nhập biển số để cấp lốt vào cổng nhanh',
     Nhom: 'Kiểm soát cổng',
   },
   {
@@ -69,7 +69,7 @@ export const VAI_TRO_LIST: VaiTro[] = [
   {
     Id: 'ROLE_GUARD',
     TenVaiTro: 'Bảo Vệ',
-    MoTa: 'Kiểm tra xe, cấp lốt vào cổng và quét nhận diện thẻ RFID',
+    MoTa: 'Kiểm tra xe, cấp lốt vào cổng và giám sát barie',
     MauSac: 'sky',
   },
 ];

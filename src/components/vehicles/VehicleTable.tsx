@@ -22,14 +22,12 @@ interface VehicleTableProps {
   onOpenCreateModal: () => void;
   onEditVehicle: (veh: VehicleCard) => void;
   onDispatchWithVehicle: (vehicleId: string) => void;
-  onOpenRfidSimulator: () => void;
 }
 
 export const VehicleTable: React.FC<VehicleTableProps> = ({
   onOpenCreateModal,
   onEditVehicle,
   onDispatchWithVehicle,
-  onOpenRfidSimulator,
 }) => {
   const { vehicles, trips, searchQuery, deleteVehicle, updateVehicleStatus } = useStore();
   const [statusFilter, setStatusFilter] = useState<string>('ALL');
@@ -86,16 +84,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <Authorize form="Frm_QuickCheckin" action="them" mode="disable">
-            <button
-              type="button"
-              onClick={onOpenRfidSimulator}
-              className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-industrial-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-industrial-700 border border-slate-300 dark:border-industrial-700 transition shadow-sm"
-            >
-              <ScanLine className="w-4 h-4 text-amber-500" />
-              <span>Quét Thẻ RFID</span>
-            </button>
-          </Authorize>
 
           <Authorize form="Frm_CardVehicle" action="them" mode="disable">
             <button
@@ -116,7 +104,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
         <table className="w-full text-left border-collapse text-xs min-w-[850px]">
           <thead>
             <tr className="border-b border-slate-200 dark:border-industrial-800 bg-slate-50 dark:bg-industrial-950 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
-              <th className="p-3 w-32">Mã Thẻ RFID</th>
               <th className="p-3 w-36">Biển Số Xe</th>
               <th className="p-3 w-32">Rơ-moóc</th>
               <th className="p-3">Lái Xe & Liên Hệ</th>
@@ -129,7 +116,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
           <tbody className="divide-y divide-slate-200 dark:divide-industrial-800">
             {filteredVehicles.length === 0 ? (
               <tr>
-                <td colSpan={8} className="p-8 text-center text-slate-400 dark:text-slate-500">
+                <td colSpan={7} className="p-8 text-center text-slate-400 dark:text-slate-500">
                   Không tìm thấy xe nào phù hợp với bộ lọc.
                 </td>
               </tr>
@@ -144,10 +131,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                     key={veh.id}
                     className="hover:bg-slate-50/80 dark:hover:bg-industrial-800/50 transition-colors"
                   >
-                    <td className="p-3 font-mono font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                      <CreditCard className="w-3.5 h-3.5 text-slate-400" />
-                      <span>{veh.cardNo}</span>
-                    </td>
                     <td className="p-3">
                       <div className="font-mono font-black text-sm text-industrial-900 dark:text-white bg-slate-100 dark:bg-industrial-800 px-2 py-0.5 rounded border border-slate-300 dark:border-industrial-700 inline-block">
                         {veh.plateNumber}
@@ -260,13 +243,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                 <div className="space-y-1">
                   <div className="font-mono font-black text-base text-industrial-900 dark:text-white bg-slate-100 dark:bg-industrial-800 px-2.5 py-0.5 rounded border border-slate-300 dark:border-industrial-700 inline-block">
                     {veh.plateNumber}
-                  </div>
-                  <div className="flex items-center gap-1.5 text-xs text-amber-600 dark:text-amber-400 font-mono font-bold">
-                    <CreditCard className="w-3.5 h-3.5" />
-                    <span>{veh.cardNo}</span>
-                    {veh.trailerPlate && (
-                      <span className="text-slate-400">/ Moóc: {veh.trailerPlate}</span>
-                    )}
                   </div>
                 </div>
                 <VehicleStatusBadge status={veh.status} />

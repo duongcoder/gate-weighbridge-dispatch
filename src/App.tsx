@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import { useStore } from './store/dispatchStore';
 import { useAuthStore } from './store/authStore';
-import { useRfidKeyboardWedge } from './hooks/useRfidKeyboardWedge';
 import { Command, VehicleCard, OrderTrip } from './types';
 
 // Layout & Navigation
@@ -13,10 +12,9 @@ import { MobileBottomNav } from './components/layout/MobileBottomNav';
 import { CommandTable } from './components/commands/CommandTable';
 import { CommandModal } from './components/commands/CommandModal';
 
-// Tab 2: Vehicles & RFID
+// Tab 2: Vehicles
 import { VehicleTable } from './components/vehicles/VehicleTable';
 import { VehicleModal } from './components/vehicles/VehicleModal';
-import { RfidScanModal } from './components/vehicles/RfidScanModal';
 
 // Tab 3: Dispatch & Weighing Mapping
 import { DispatchKanban } from './components/dispatch/DispatchKanban';
@@ -61,7 +59,6 @@ export function App() {
   const [vehicleModalOpen, setVehicleModalOpen] = useState(false);
   const [editingVehicle, setEditingVehicle] = useState<VehicleCard | null>(null);
 
-  const [rfidSimModalOpen, setRfidSimModalOpen] = useState(false);
   const [quickCheckinOpen, setQuickCheckinOpen] = useState(false);
   const [permissionMatrixOpen, setPermissionMatrixOpen] = useState(false);
   const [userManagementOpen, setUserManagementOpen] = useState(false);
@@ -135,49 +132,11 @@ export function App() {
   }, [currentUser, activeTab, hasPermission, setActiveTab]);
 
   // -------------------------------------------------------------
-  // HARDWARE RFID KEYBOARD WEDGE HOOK
-  // -------------------------------------------------------------
-  useRfidKeyboardWedge({
-    onScan: (code) => {
-      const matched = findVehicleByCardOrPlate(code);
-      if (matched) {
-        showToast(`⚡ ĐÃ NHẬN DIỆN THẺ RFID: ${matched.cardNo} (Xe ${matched.plateNumber})`);
-        if (matched.activeTripId) {
-          const t = trips.find((item) => item.id === matched.activeTripId);
-          if (t && (t.step === 'SCALE_1' || t.step === 'SCALE_2')) {
-            setActiveWeighingTrip(t);
-            return;
-          }
-        }
-        if (hasPermission('Frm_CardVehicle', 'xem')) {
-          setActiveTab('VEHICLES');
-        }
-      } else {
-        const canCreate = hasPermission('Frm_CardVehicle', 'them') || hasPermission('Frm_QuickCheckin', 'them');
-        if (canCreate) {
-          showToast(`❓ THẺ LẠ: ${code} - Mở cửa sổ đăng ký xe mới...`);
-          setVehicleModalOpen(true);
-        } else {
-          showToast(`❓ THẺ LẠ: ${code} - Chưa có hồ sơ trên hệ thống.`);
-        }
-      }
-    },
-  });
-
-  // -------------------------------------------------------------
   // KEYBOARD SHORTCUTS GUARD
   // -------------------------------------------------------------
   useEffect(() => {
     const handleShortcuts = (e: KeyboardEvent) => {
-      if (e.key === 'F2') {
-        e.preventDefault();
-        const canScan = hasPermission('Frm_QuickCheckin', 'them') || hasPermission('Frm_CardVehicle', 'them');
-        if (canScan) {
-          setRfidSimModalOpen(true);
-        } else {
-          showToast('⛔ Bạn không có quyền quét thẻ RFID hoặc khai báo xe.');
-        }
-      } else if (e.key === 'F3') {
+      if (e.key === 'F3') {
         e.preventDefault();
         const canDispatch = hasPermission('Frm_DispatchOrder', 'them');
         if (canDispatch) {
@@ -221,7 +180,6 @@ export function App() {
       {/* 1. Global Station Header & Tab Switcher */}
       <Topbar
         onOpenQuickCheckin={() => setQuickCheckinOpen(true)}
-        onOpenRfidSimulator={() => setRfidSimModalOpen(true)}
         onOpenPermissionMatrix={() => setPermissionMatrixOpen(true)}
         onOpenUserManagement={() => setUserManagementOpen(true)}
         onOpenLogin={() => setLoginModalOpen(true)}
@@ -290,7 +248,6 @@ export function App() {
                   setVehicleModalOpen(true);
                 }}
                 onDispatchWithVehicle={handleDispatchWithVehicle}
-                onOpenRfidSimulator={() => setRfidSimModalOpen(true)}
               />
             )}
 
@@ -317,7 +274,6 @@ export function App() {
       {/* 5. Mobile Bottom Navigation Dock */}
       <MobileBottomNav
         onOpenQuickCheckin={() => setQuickCheckinOpen(true)}
-        onOpenRfidSimulator={() => setRfidSimModalOpen(true)}
       />
 
       {/* =========================================================================
@@ -366,20 +322,6 @@ export function App() {
         onSave={addVehicle}
         onUpdate={updateVehicle}
         initialData={editingVehicle}
-      />
-
-      {/* RFID Simulator Modal */}
-      <RfidScanModal
-        isOpen={rfidSimModalOpen}
-        onClose={() => setRfidSimModalOpen(false)}
-        onSelectVehicleForAction={(veh) => {
-          if (veh.status === 'Rảnh (Idle)') {
-            handleDispatchWithVehicle(veh.id);
-          } else if (veh.activeTripId) {
-            const tr = trips.find((t) => t.id === veh.activeTripId);
-            if (tr) setActiveWeighingTrip(tr);
-          }
-        }}
       />
 
       {/* Quick Check-in Modal */}

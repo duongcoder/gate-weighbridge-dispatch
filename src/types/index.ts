@@ -19,7 +19,7 @@ export type VehicleStatus = 'Rảnh (Idle)' | 'Đang trong trạm (In-Station)' 
 
 export interface VehicleCard {
   id: string;
-  cardNo: string; // e.g. "RFID-8831"
+  cardNo: string; // e.g. "XE-29H12345"
   plateNumber: string; // e.g. "29H-123.45"
   trailerPlate?: string; // e.g. "29R-012.34"
   driverName: string;

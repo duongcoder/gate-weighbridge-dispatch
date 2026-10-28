@@ -1,6 +1,6 @@
 /**
  * Industrial audio synthesizer using Web Audio API
- * Generates crisp tones for RFID scans, scale stabilization, and gate approvals
+ * Generates crisp tones for check-in, scale stabilization, and gate approvals
  */
 
 class SoundEffects {
@@ -18,8 +18,10 @@ class SoundEffects {
     }
   }
 
-  // Double high-pitch beep for successful RFID badge read
-  playRfidBeep() {
+  // Double high-pitch beep for successful card / plate read
+  playScanBeep() {
+  }
+  playScanBeepReal() {
     try {
       this.initCtx();
       if (!this.ctx) return;

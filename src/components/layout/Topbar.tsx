@@ -24,7 +24,6 @@ import { Authorize } from '../common/Authorize';
 
 interface TopbarProps {
   onOpenQuickCheckin: () => void;
-  onOpenRfidSimulator: () => void;
   onOpenPermissionMatrix: () => void;
   onOpenUserManagement: () => void;
   onOpenLogin: () => void;
@@ -32,7 +31,6 @@ interface TopbarProps {
 
 export const Topbar: React.FC<TopbarProps> = ({
   onOpenQuickCheckin,
-  onOpenRfidSimulator,
   onOpenPermissionMatrix,
   onOpenUserManagement,
   onOpenLogin,
@@ -224,24 +222,6 @@ export const Topbar: React.FC<TopbarProps> = ({
                         <span>⚙ Phân Quyền</span>
                       </button>
                     )}
-
-                    {/* 📟 Quét Thẻ RFID (F2) */}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setUserDropdownOpen(false);
-                        onOpenRfidSimulator();
-                      }}
-                      className="w-full text-left px-3 py-2 text-xs font-medium rounded-xl text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-industrial-800 transition flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <ScanLine className="w-4 h-4 text-amber-500" />
-                        <span>Quét Thẻ RFID</span>
-                      </div>
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-200 dark:bg-industrial-700 text-slate-600 dark:text-slate-400">
-                        F2
-                      </span>
-                    </button>
                   </div>
 
                   {/* 🚪 Đăng Xuất Viền Đỏ ở dưới đáy dropdown */}
@@ -258,19 +238,6 @@ export const Topbar: React.FC<TopbarProps> = ({
                 </div>
               )}
             </div>
-
-            {/* RFID Scanner button (chỉ hiện trên màn hình rất lớn xl+) */}
-            <Authorize form="Frm_QuickCheckin" action="them" fallback={null}>
-              <button
-                type="button"
-                onClick={onOpenRfidSimulator}
-                className="hidden xl:inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-industrial-800 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-industrial-700 border border-slate-200 dark:border-industrial-700 transition shadow-xs"
-                title="Mô phỏng quét thẻ RFID / Barcode (Phím tắt F2)"
-              >
-                <ScanLine className="w-4 h-4 text-amber-500" />
-                <span>Quét RFID (F2)</span>
-              </button>
-            </Authorize>
 
             {/* Quick Check-in Button */}
             <Authorize form="Frm_QuickCheckin" action="them" fallback={null}>
@@ -342,8 +309,8 @@ export const Topbar: React.FC<TopbarProps> = ({
                     : 'text-slate-600 dark:text-industrial-400 hover:text-slate-900 dark:hover:text-white'
                 }`}
               >
-                <CreditCard className="w-4 h-4" />
-                <span>THẺ & XE</span>
+                <Truck className="w-4 h-4" />
+                <span>PHƯƠNG TIỆN</span>
                 <span className="ml-1 text-[11px] px-1.5 py-0.2 rounded-full bg-slate-200 dark:bg-industrial-700 font-mono">
                   {vehicles.length}
                 </span>
@@ -393,7 +360,7 @@ export const Topbar: React.FC<TopbarProps> = ({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Tìm biển số, mã thẻ RFID, số lệnh..."
+              placeholder="Tìm biển số xe, lái xe, số lệnh..."
               className="w-full pl-9 pr-8 py-1.5 text-xs sm:text-sm rounded-lg bg-slate-50 dark:bg-industrial-950 border border-slate-200 dark:border-industrial-800 text-industrial-900 dark:text-industrial-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
             />
             {searchQuery && (

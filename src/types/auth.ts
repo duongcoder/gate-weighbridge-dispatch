@@ -9,7 +9,7 @@
 
 export type MaChucNang = 
   | 'Frm_Command'          // Quản lý Lệnh
-  | 'Frm_CardVehicle'      // Thẻ & Xe
+  | 'Frm_CardVehicle'      // Phương Tiện
   | 'Frm_DispatchOrder'    // Điều phối Ghép Lệnh
   | 'Frm_ScaleCapture'     // Ghi nhận bàn cân
   | 'Frm_WeighingTicket'   // In phiếu cân

@@ -1,16 +1,14 @@
 import React from 'react';
 import { useStore } from '../../store/dispatchStore';
 import { useAuthStore } from '../../store/authStore';
-import { FileText, CreditCard, Share2, Zap, ScanLine, BarChart3 } from 'lucide-react';
+import { FileText, Truck, Share2, Zap, BarChart3 } from 'lucide-react';
 
 interface MobileBottomNavProps {
   onOpenQuickCheckin: () => void;
-  onOpenRfidSimulator: () => void;
 }
 
 export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   onOpenQuickCheckin,
-  onOpenRfidSimulator,
 }) => {
   const { activeTab, setActiveTab, trips } = useStore();
   const { hasPermission } = useAuthStore();
@@ -21,7 +19,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
   const canViewDispatch = hasPermission('Frm_DispatchOrder', 'xem');
   const canViewReports = hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao');
   const canAddCheckin = hasPermission('Frm_QuickCheckin', 'them');
-  const canScan = hasPermission('Frm_QuickCheckin', 'them') || hasPermission('Frm_CardVehicle', 'them');
 
   return (
     <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-industrial-900/95 backdrop-blur border-t border-slate-200 dark:border-industrial-800 pb-safe shadow-lg">
@@ -53,8 +50,8 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 : 'text-slate-500 dark:text-slate-400'
             }`}
           >
-            <CreditCard className="w-5 h-5 mb-0.5" />
-            <span>Thẻ & Xe</span>
+            <Truck className="w-5 h-5 mb-0.5" />
+            <span>Phương Tiện</span>
           </button>
         )}
 
@@ -108,18 +105,6 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
           >
             <BarChart3 className="w-5 h-5 mb-0.5" />
             <span>Báo Cáo</span>
-          </button>
-        )}
-
-        {/* Quick Scan RFID */}
-        {canScan && (
-          <button
-            type="button"
-            onClick={onOpenRfidSimulator}
-            className="flex flex-col items-center justify-center py-2 px-2 text-[11px] font-medium text-slate-500 dark:text-slate-400"
-          >
-            <ScanLine className="w-5 h-5 mb-0.5 text-amber-500" />
-            <span>Quẹt Thẻ</span>
           </button>
         )}
       </div>
