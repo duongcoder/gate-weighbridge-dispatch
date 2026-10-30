@@ -47,10 +47,10 @@ export const CommandTable: React.FC<CommandTableProps> = ({
       // Search text match
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesCode = cmd.code.toLowerCase().includes(q);
-        const matchesCustomer = cmd.customer.toLowerCase().includes(q);
-        const matchesMaterial = cmd.material.toLowerCase().includes(q);
-        const matchesType = cmd.type.toLowerCase().includes(q);
+        const matchesCode = (cmd.code || '').toLowerCase().includes(q);
+        const matchesCustomer = (cmd.customer || '').toLowerCase().includes(q);
+        const matchesMaterial = (cmd.material || '').toLowerCase().includes(q);
+        const matchesType = (cmd.type || '').toLowerCase().includes(q);
         if (!matchesCode && !matchesCustomer && !matchesMaterial && !matchesType) {
           return false;
         }
@@ -266,11 +266,11 @@ export const CommandTable: React.FC<CommandTableProps> = ({
                         {cmd.type}
                       </span>
                     </td>
-                    <td className="p-3 font-medium text-industrial-900 dark:text-white max-w-[200px] truncate" title={cmd.customer}>
-                      {cmd.customer}
+                    <td className="p-3 font-medium text-industrial-900 dark:text-white max-w-[200px] truncate" title={cmd.customer || ''}>
+                      {cmd.customer || '---'}
                     </td>
                     <td className="p-3 text-slate-700 dark:text-slate-300">
-                      {cmd.material}
+                      {cmd.material || '---'}
                     </td>
                     <td className="p-3">
                       <div className="space-y-1">
@@ -400,10 +400,10 @@ export const CommandTable: React.FC<CommandTableProps> = ({
 
                 <div>
                   <h4 className="font-bold text-sm text-industrial-900 dark:text-white">
-                    {cmd.customer}
+                    {cmd.customer || '---'}
                   </h4>
                   <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                    Hàng: <span className="font-medium">{cmd.material}</span>
+                    Hàng: <span className="font-medium">{cmd.material || '---'}</span>
                   </p>
                 </div>
 

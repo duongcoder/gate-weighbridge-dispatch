@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { NguoiDung, VaiTro, ChucNang, PhanQuyen, MaChucNang, PermissionAction } from '../types/auth';
 import { authApi, LoginDto, RegisterDto, UserSessionDto, AuthResponseDto } from '../services/authApi';
+import { dispatchStore } from './dispatchStore';
 
 export const CHUC_NANG_LIST: ChucNang[] = [
   {
@@ -61,16 +62,34 @@ export const VAI_TRO_LIST: VaiTro[] = [
     MauSac: 'emerald',
   },
   {
+    Id: 'ROLE_MANAGER',
+    TenVaiTro: 'Trưởng Phòng (Quản Lý)',
+    MoTa: 'Quản lý điều hành, xem/sửa lệnh, xe, duyệt lệnh',
+    MauSac: 'indigo',
+  },
+  {
+    Id: 'ROLE_SALES',
+    TenVaiTro: 'Kinh Doanh (Quản Lý Lệnh)',
+    MoTa: 'Tạo và theo dõi lệnh cân nhập/xuất',
+    MauSac: 'purple',
+  },
+  {
+    Id: 'ROLE_STATION_HEAD',
+    TenVaiTro: 'Trạm Trưởng',
+    MoTa: 'Quản lý phương tiện và điều phối cổng trạm',
+    MauSac: 'sky',
+  },
+  {
+    Id: 'ROLE_ACCOUNTANT',
+    TenVaiTro: 'Kế Toán',
+    MoTa: 'Báo cáo, thống kê sản lượng và xuất phiếu cân',
+    MauSac: 'teal',
+  },
+  {
     Id: 'ROLE_SCALE',
     TenVaiTro: 'Nhân Viên Bàn Cân',
     MoTa: 'Vận hành bàn cân điện tử, ghi nhận khối lượng và in phiếu cân',
     MauSac: 'amber',
-  },
-  {
-    Id: 'ROLE_GUARD',
-    TenVaiTro: 'Bảo Vệ',
-    MoTa: 'Kiểm tra xe, cấp lốt vào cổng và giám sát barie',
-    MauSac: 'sky',
   },
 ];
 
@@ -183,9 +202,16 @@ class AuthStoreManager {
     return this.liveUserSession;
   }
 
+  isSuperAdmin(): boolean {
+    if (!this.liveUserSession) return false;
+    const { vaiTroId, tenDangNhap } = this.liveUserSession;
+    return vaiTroId === 1 || vaiTroId === 2 || tenDangNhap?.toLowerCase() === 'admin';
+  }
+
   getCurrentUser(): NguoiDung {
     if (this.liveUserSession) {
-      const roleIdStr = this.mapRoleIdToCode(this.liveUserSession.vaiTroId);
+      const isAdm = this.isSuperAdmin();
+      const roleIdStr = this.mapRoleIdToCode(this.liveUserSession.vaiTroId, this.liveUserSession.tenDangNhap);
       return {
         Id: String(this.liveUserSession.id),
         TenDangNhap: this.liveUserSession.tenDangNhap,
@@ -193,9 +219,9 @@ class AuthStoreManager {
         VaiTroId: roleIdStr,
         Email: this.liveUserSession.email,
         SoDienThoai: this.liveUserSession.dienThoai,
-        ChucVu: this.liveUserSession.tenVaiTro,
+        ChucVu: isAdm ? 'Quản Trị Viên (Admin)' : (this.liveUserSession.tenVaiTro || 'Nhân Viên Bàn Cân'),
         KichHoat: true,
-        Avatar: this.getAvatarForRole(this.liveUserSession.vaiTroId),
+        Avatar: this.getAvatarForRole(this.liveUserSession.vaiTroId, this.liveUserSession.tenDangNhap),
       };
     }
     return DEFAULT_GUEST;
@@ -224,6 +250,8 @@ class AuthStoreManager {
     saveStorage(STORAGE_KEYS.USER_SESSION, res.userSession);
 
     this.notify();
+    // Auto load commands, vehicles, and orders immediately after login
+    dispatchStore.fetchInitialData().catch(console.error);
     return res;
   }
 
@@ -239,6 +267,7 @@ class AuthStoreManager {
     saveStorage(STORAGE_KEYS.USER_SESSION, res.userSession);
 
     this.notify();
+    dispatchStore.fetchInitialData().catch(console.error);
     return res;
   }
 
@@ -271,6 +300,8 @@ class AuthStoreManager {
       this.liveUserSession = session;
       saveStorage(STORAGE_KEYS.USER_SESSION, session);
       this.notify();
+      // Auto load commands, vehicles, and orders immediately after session restore
+      dispatchStore.fetchInitialData().catch(console.error);
       return true;
     } catch (err) {
       console.warn('Saved auth token is invalid or backend unreachable:', err);
@@ -285,19 +316,19 @@ class AuthStoreManager {
       return false;
     }
 
-    // Admin (VaiTroId = 1) always has full permissions
-    if (this.liveUserSession.vaiTroId === 1) {
+    // Admin (admin / VaiTroId = 1 / VaiTroId = 2) always has full permissions
+    if (this.isSuperAdmin()) {
       return true;
     }
 
     const permDetail = this.liveUserSession.permissions[maChucNang];
     if (permDetail) {
       switch (action) {
-        case 'xem': return permDetail.xem;
-        case 'them': return permDetail.them;
-        case 'sua': return permDetail.sua;
-        case 'xoa': return permDetail.xoa;
-        case 'baoCao': return permDetail.baoCao;
+        case 'xem': return !!permDetail.xem;
+        case 'them': return !!permDetail.them;
+        case 'sua': return !!permDetail.sua;
+        case 'xoa': return !!permDetail.xoa;
+        case 'baoCao': return !!permDetail.baoCao;
         default: return false;
       }
     }
@@ -307,7 +338,7 @@ class AuthStoreManager {
 
   getPermission(maChucNang: MaChucNang): PhanQuyen | undefined {
     if (this.liveUserSession) {
-      if (this.liveUserSession.vaiTroId === 1) {
+      if (this.isSuperAdmin()) {
         return {
           Id: `live-${maChucNang}`,
           VaiTroId: 'ROLE_ADMIN',
@@ -324,13 +355,13 @@ class AuthStoreManager {
       if (permDetail) {
         return {
           Id: `live-${maChucNang}`,
-          VaiTroId: this.mapRoleIdToCode(this.liveUserSession.vaiTroId),
+          VaiTroId: this.mapRoleIdToCode(this.liveUserSession.vaiTroId, this.liveUserSession.tenDangNhap),
           MaChucNang: maChucNang,
-          Xem: permDetail.xem,
-          Them: permDetail.them,
-          Sua: permDetail.sua,
-          Xoa: permDetail.xoa,
-          BaoCao: permDetail.baoCao,
+          Xem: !!permDetail.xem,
+          Them: !!permDetail.them,
+          Sua: !!permDetail.sua,
+          Xoa: !!permDetail.xoa,
+          BaoCao: !!permDetail.baoCao,
           Gate_Id: `GATE_${this.liveUserSession.gateId || 1}`,
         };
       }
@@ -368,20 +399,30 @@ class AuthStoreManager {
     this.notify();
   }
 
-  private mapRoleIdToCode(vaiTroId?: number): string {
+  private mapRoleIdToCode(vaiTroId?: number, tenDangNhap?: string): string {
+    if (tenDangNhap?.toLowerCase() === 'admin' || vaiTroId === 1 || vaiTroId === 2) {
+      return 'ROLE_ADMIN';
+    }
     switch (vaiTroId) {
-      case 1: return 'ROLE_ADMIN';
-      case 2: return 'ROLE_SCALE';
-      case 3: return 'ROLE_GUARD';
-      default: return 'ROLE_GUARD';
+      case 4: return 'ROLE_MANAGER';
+      case 5: return 'ROLE_SALES';
+      case 7: return 'ROLE_STATION_HEAD';
+      case 9: return 'ROLE_ACCOUNTANT';
+      case 13: return 'ROLE_SCALE';
+      default: return 'ROLE_SCALE';
     }
   }
 
-  private getAvatarForRole(vaiTroId?: number): string {
+  private getAvatarForRole(vaiTroId?: number, tenDangNhap?: string): string {
+    if (tenDangNhap?.toLowerCase() === 'admin' || vaiTroId === 1 || vaiTroId === 2) {
+      return '👑';
+    }
     switch (vaiTroId) {
-      case 1: return '👑';
-      case 2: return '⚖️';
-      case 3: return '🛡️';
+      case 4: return '👔';
+      case 5: return '💼';
+      case 7: return '🏭';
+      case 9: return '📊';
+      case 13: return '⚖️';
       default: return '👤';
     }
   }

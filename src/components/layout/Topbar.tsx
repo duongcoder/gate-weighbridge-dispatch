@@ -82,17 +82,25 @@ export const Topbar: React.FC<TopbarProps> = ({
 
   const activeTripsCount = trips.filter(t => t.step !== 'COMPLETED').length;
 
-  // Permissions
-  const canViewCommands = hasPermission('Frm_Command', 'xem');
-  const canViewVehicles = hasPermission('Frm_CardVehicle', 'xem');
-  const canViewDispatch = hasPermission('Frm_DispatchOrder', 'xem');
-  const isAdmin = currentUser.VaiTroId === 'ROLE_ADMIN' || liveUserSession?.vaiTroId === 1;
-  const canViewReports = hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao') || isAdmin;
+  // Admin status check (Admin / VaiTroId=1 / VaiTroId=2)
+  const isAdmin = currentUser.VaiTroId === 'ROLE_ADMIN' || 
+                  liveUserSession?.vaiTroId === 1 || 
+                  liveUserSession?.vaiTroId === 2 || 
+                  currentUser.TenDangNhap?.toLowerCase() === 'admin';
+
+  // Permissions (Admin unlocks 100% of tabs)
+  const canViewCommands = isAdmin || hasPermission('Frm_Command', 'xem');
+  const canViewVehicles = isAdmin || hasPermission('Frm_CardVehicle', 'xem');
+  const canViewDispatch = isAdmin || hasPermission('Frm_DispatchOrder', 'xem');
+  const canViewReports = isAdmin || hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao');
 
   const roleBadgeColors: Record<string, string> = {
     ROLE_ADMIN: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800',
+    ROLE_MANAGER: 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800',
+    ROLE_SALES: 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-300 border-purple-300 dark:border-purple-800',
+    ROLE_STATION_HEAD: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border-sky-300 dark:border-sky-800',
+    ROLE_ACCOUNTANT: 'bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-300 border-teal-300 dark:border-teal-800',
     ROLE_SCALE: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-800',
-    ROLE_GUARD: 'bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-300 border-sky-300 dark:border-sky-800',
   };
 
   const handleLogout = () => {

@@ -76,16 +76,22 @@ export const GateStepBadge: React.FC<{ step: string }> = ({ step }) => {
 };
 
 export const RelationBadge: React.FC<{ relation: RelationType; size?: 'sm' | 'md' }> = ({ relation, size = 'md' }) => {
-  const meta = {
-    '1-1': { label: '1 Lệnh - 1 Xe', desc: 'Đơn lẻ', variant: 'sky' as const },
-    '1-N': { label: '1 Lệnh - N Xe', desc: 'Đội xe lớn', variant: 'purple' as const },
-    'N-1': { label: 'N Lệnh - 1 Xe', desc: 'Xe gộp lệnh', variant: 'amber' as const },
-    'N-N': { label: 'N Lệnh - N Xe', desc: 'Tổ hợp cụm', variant: 'indigo' as const },
-  }[relation];
+  const relationMap: Record<string, { label: string; desc: string; variant: 'sky' | 'purple' | 'amber' | 'indigo' | 'default' }> = {
+    '1-1': { label: '1 Lệnh - 1 Xe', desc: 'Đơn lẻ', variant: 'sky' },
+    '1-N': { label: '1 Lệnh - N Xe', desc: 'Đội xe lớn', variant: 'purple' },
+    'N-1': { label: 'N Lệnh - 1 Xe', desc: 'Xe gộp lệnh', variant: 'amber' },
+    'N-N': { label: 'N Lệnh - N Xe', desc: 'Tổ hợp cụm', variant: 'indigo' },
+  };
+
+  const meta = (relation && relationMap[relation]) || {
+    label: relation || '1-1',
+    desc: 'Ghép lệnh',
+    variant: 'sky' as const,
+  };
 
   return (
     <Badge variant={meta.variant} size={size} className="font-mono">
-      <span className="font-bold">[{relation}]</span> {meta.label}
+      <span className="font-bold">[{relation || '1-1'}]</span> {meta.label}
     </Badge>
   );
 };

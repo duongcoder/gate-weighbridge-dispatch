@@ -118,18 +118,23 @@ export function App() {
   // -------------------------------------------------------------
   // OPERATIONAL REQUIREMENT: ACTIVE TAB AUTO-FALLBACK ON USER SWITCH
   // -------------------------------------------------------------
+  const isSuperAdmin = currentUser.VaiTroId === 'ROLE_ADMIN' || 
+                       liveUserSession?.vaiTroId === 1 || 
+                       liveUserSession?.vaiTroId === 2 || 
+                       currentUser.TenDangNhap?.toLowerCase() === 'admin';
+
   useEffect(() => {
-    const canViewReports = hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao') || currentUser.VaiTroId === 'ROLE_ADMIN' || liveUserSession?.vaiTroId === 1;
+    const canViewReports = isSuperAdmin || hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao');
     const validTabs: ('COMMANDS' | 'VEHICLES' | 'DISPATCH' | 'REPORT')[] = [];
-    if (hasPermission('Frm_Command', 'xem')) validTabs.push('COMMANDS');
-    if (hasPermission('Frm_CardVehicle', 'xem')) validTabs.push('VEHICLES');
-    if (hasPermission('Frm_DispatchOrder', 'xem')) validTabs.push('DISPATCH');
+    if (isSuperAdmin || hasPermission('Frm_Command', 'xem')) validTabs.push('COMMANDS');
+    if (isSuperAdmin || hasPermission('Frm_CardVehicle', 'xem')) validTabs.push('VEHICLES');
+    if (isSuperAdmin || hasPermission('Frm_DispatchOrder', 'xem')) validTabs.push('DISPATCH');
     if (canViewReports) validTabs.push('REPORT');
 
     if (validTabs.length > 0 && !validTabs.includes(activeTab)) {
       setActiveTab(validTabs[0]);
     }
-  }, [currentUser, activeTab, hasPermission, setActiveTab]);
+  }, [currentUser, activeTab, hasPermission, setActiveTab, isSuperAdmin]);
 
   // -------------------------------------------------------------
   // KEYBOARD SHORTCUTS GUARD
@@ -223,49 +228,73 @@ export function App() {
           </div>
         ) : (
           <>
-            {activeTab === 'COMMANDS' && hasPermission('Frm_Command', 'xem') && (
-              <CommandTable
-                onOpenCreateModal={() => {
-                  setEditingCommand(null);
-                  setCommandModalOpen(true);
-                }}
-                onEditCommand={(cmd) => {
-                  setEditingCommand(cmd);
-                  setCommandModalOpen(true);
-                }}
-                onDispatchWithCommand={handleDispatchWithCommand}
-              />
+            {activeTab === 'COMMANDS' && (
+              (isSuperAdmin || hasPermission('Frm_Command', 'xem')) ? (
+                <CommandTable
+                  onOpenCreateModal={() => {
+                    setEditingCommand(null);
+                    setCommandModalOpen(true);
+                  }}
+                  onEditCommand={(cmd) => {
+                    setEditingCommand(cmd);
+                    setCommandModalOpen(true);
+                  }}
+                  onDispatchWithCommand={handleDispatchWithCommand}
+                />
+              ) : (
+                <div className="py-12 text-center text-slate-500 bg-white dark:bg-industrial-900 rounded-xl border border-slate-200 dark:border-industrial-800">
+                  <p className="font-semibold">Bạn không có quyền truy cập phân hệ Quản lý lệnh.</p>
+                </div>
+              )
             )}
 
-            {activeTab === 'VEHICLES' && hasPermission('Frm_CardVehicle', 'xem') && (
-              <VehicleTable
-                onOpenCreateModal={() => {
-                  setEditingVehicle(null);
-                  setVehicleModalOpen(true);
-                }}
-                onEditVehicle={(veh) => {
-                  setEditingVehicle(veh);
-                  setVehicleModalOpen(true);
-                }}
-                onDispatchWithVehicle={handleDispatchWithVehicle}
-              />
+            {activeTab === 'VEHICLES' && (
+              (isSuperAdmin || hasPermission('Frm_CardVehicle', 'xem')) ? (
+                <VehicleTable
+                  onOpenCreateModal={() => {
+                    setEditingVehicle(null);
+                    setVehicleModalOpen(true);
+                  }}
+                  onEditVehicle={(veh) => {
+                    setEditingVehicle(veh);
+                    setVehicleModalOpen(true);
+                  }}
+                  onDispatchWithVehicle={handleDispatchWithVehicle}
+                />
+              ) : (
+                <div className="py-12 text-center text-slate-500 bg-white dark:bg-industrial-900 rounded-xl border border-slate-200 dark:border-industrial-800">
+                  <p className="font-semibold">Bạn không có quyền truy cập phân hệ Phương tiện.</p>
+                </div>
+              )
             )}
 
-            {activeTab === 'DISPATCH' && hasPermission('Frm_DispatchOrder', 'xem') && (
-              <DispatchKanban
-                onOpenWizard={() => {
-                  setPreselectedCmdId(null);
-                  setPreselectedVehId(null);
-                  setDispatchWizardOpen(true);
-                }}
-                onOpenWeighing={(trip) => setActiveWeighingTrip(trip)}
-                onOpenTicket={(trip) => setActiveTicketTrip(trip)}
-                onAttachVehicle={(orderId) => setAttachVehicleOrderId(orderId)}
-              />
+            {activeTab === 'DISPATCH' && (
+              (isSuperAdmin || hasPermission('Frm_DispatchOrder', 'xem')) ? (
+                <DispatchKanban
+                  onOpenWizard={() => {
+                    setPreselectedCmdId(null);
+                    setPreselectedVehId(null);
+                    setDispatchWizardOpen(true);
+                  }}
+                  onOpenWeighing={(trip) => setActiveWeighingTrip(trip)}
+                  onOpenTicket={(trip) => setActiveTicketTrip(trip)}
+                  onAttachVehicle={(orderId) => setAttachVehicleOrderId(orderId)}
+                />
+              ) : (
+                <div className="py-12 text-center text-slate-500 bg-white dark:bg-industrial-900 rounded-xl border border-slate-200 dark:border-industrial-800">
+                  <p className="font-semibold">Bạn không có quyền truy cập phân hệ Điều phối ghép lệnh.</p>
+                </div>
+              )
             )}
 
-            {activeTab === 'REPORT' && (hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao') || currentUser.VaiTroId === 'ROLE_ADMIN' || liveUserSession?.vaiTroId === 1) && (
-              <ReportsView />
+            {activeTab === 'REPORT' && (
+              (isSuperAdmin || hasPermission('Frm_Reports', 'baoCao') || hasPermission('Frm_Reports', 'xem') || hasPermission('Frm_WeighingTicket', 'baoCao')) ? (
+                <ReportsView />
+              ) : (
+                <div className="py-12 text-center text-slate-500 bg-white dark:bg-industrial-900 rounded-xl border border-slate-200 dark:border-industrial-800">
+                  <p className="font-semibold">Bạn không có quyền truy cập phân hệ Báo cáo.</p>
+                </div>
+              )
             )}
           </>
         )}

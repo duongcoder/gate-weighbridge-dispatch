@@ -48,7 +48,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
     tenDangNhap: '',
     matKhau: '123',
     hoTen: '',
-    vaiTroId: 2, // Mặc định: Nhân viên Bàn Cân
+    vaiTroId: 13, // Mặc định: Vận hành / Bàn cân
     gate_Id: 1,
     dienThoai: '',
     diaChi: '',
@@ -100,7 +100,7 @@ export const UserManagementModal: React.FC<UserManagementModalProps> = ({
       tenDangNhap: user.tenDangNhap,
       matKhau: '', // Để trống khi sửa, chỉ nhập nếu muốn đổi mật khẩu
       hoTen: user.hoTen,
-      vaiTroId: user.vaiTroId || 2,
+      vaiTroId: user.vaiTroId || 13,
       gate_Id: user.gate_Id || 1,
       dienThoai: user.dienThoai || '',
       diaChi: user.diaChi || '',

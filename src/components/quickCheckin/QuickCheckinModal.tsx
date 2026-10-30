@@ -88,6 +88,8 @@ export const QuickCheckinModal: React.FC<QuickCheckinModalProps> = ({
       vehicleIdToUse = newVeh.id;
     }
 
+    if (!vehicleIdToUse) return;
+
     // Create 1-1 dispatch order for this vehicle
     const result = createDispatchOrder([selectedCommandId], [vehicleIdToUse], 'Khai báo nhanh tại barrier');
     if (result) {

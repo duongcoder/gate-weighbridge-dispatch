@@ -36,11 +36,11 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
     return vehicles.filter((veh) => {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesPlate = veh.plateNumber.toLowerCase().includes(q);
-        const matchesCard = veh.cardNo.toLowerCase().includes(q);
-        const matchesDriver = veh.driverName.toLowerCase().includes(q);
-        const matchesCompany = veh.transportCompany.toLowerCase().includes(q);
-        const matchesTrailer = veh.trailerPlate?.toLowerCase().includes(q);
+        const matchesPlate = (veh.plateNumber || '').toLowerCase().includes(q);
+        const matchesCard = (veh.cardNo || '').toLowerCase().includes(q);
+        const matchesDriver = (veh.driverName || '').toLowerCase().includes(q);
+        const matchesCompany = (veh.transportCompany || '').toLowerCase().includes(q);
+        const matchesTrailer = (veh.trailerPlate || '').toLowerCase().includes(q);
         if (!matchesPlate && !matchesCard && !matchesDriver && !matchesCompany && !matchesTrailer) {
           return false;
         }
@@ -133,7 +133,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                   >
                     <td className="p-3">
                       <div className="font-mono font-black text-sm text-industrial-900 dark:text-white bg-slate-100 dark:bg-industrial-800 px-2 py-0.5 rounded border border-slate-300 dark:border-industrial-700 inline-block">
-                        {veh.plateNumber}
+                        {veh.plateNumber || '---'}
                       </div>
                     </td>
                     <td className="p-3 font-mono text-slate-600 dark:text-slate-400">
@@ -141,7 +141,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                     </td>
                     <td className="p-3">
                       <div className="font-medium text-industrial-900 dark:text-white">
-                        {veh.driverName}
+                        {veh.driverName || '---'}
                       </div>
                       <div className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1">
                         <Phone className="w-3 h-3" />
@@ -149,7 +149,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                       </div>
                     </td>
                     <td className="p-3 text-slate-700 dark:text-slate-300 font-medium">
-                      {veh.transportCompany}
+                      {veh.transportCompany || '---'}
                     </td>
                     <td className="p-3 text-right font-mono font-bold text-slate-800 dark:text-slate-200">
                       {formatWeight(veh.defaultTareWeight)}
@@ -242,7 +242,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="font-mono font-black text-base text-industrial-900 dark:text-white bg-slate-100 dark:bg-industrial-800 px-2.5 py-0.5 rounded border border-slate-300 dark:border-industrial-700 inline-block">
-                    {veh.plateNumber}
+                    {veh.plateNumber || '---'}
                   </div>
                 </div>
                 <VehicleStatusBadge status={veh.status} />
@@ -252,12 +252,12 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                 <div className="flex justify-between">
                   <span className="text-slate-500">Lái xe:</span>
                   <span className="font-medium text-industrial-900 dark:text-white">
-                    {veh.driverName} ({veh.driverPhone || 'Chưa có SĐT'})
+                    {veh.driverName || '---'} ({veh.driverPhone || 'Chưa có SĐT'})
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Vận tải:</span>
-                  <span className="font-medium">{veh.transportCompany}</span>
+                  <span className="font-medium">{veh.transportCompany || '---'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-500">Bì định mức:</span>

@@ -50,11 +50,11 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
       // Search filter
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesPlate = trip.plateNumber.toLowerCase().includes(q);
-        const matchesOrder = order?.code.toLowerCase().includes(q);
-        const matchesDriver = trip.driverName.toLowerCase().includes(q);
-        const matchesMaterial = primaryCommand?.material.toLowerCase().includes(q);
-        const matchesCustomer = primaryCommand?.customer.toLowerCase().includes(q);
+        const matchesPlate = (trip.plateNumber || '').toLowerCase().includes(q);
+        const matchesOrder = (order?.code || '').toLowerCase().includes(q);
+        const matchesDriver = (trip.driverName || '').toLowerCase().includes(q);
+        const matchesMaterial = (primaryCommand?.material || '').toLowerCase().includes(q);
+        const matchesCustomer = (primaryCommand?.customer || '').toLowerCase().includes(q);
         if (!matchesPlate && !matchesOrder && !matchesDriver && !matchesMaterial && !matchesCustomer) {
           return false;
         }
@@ -75,7 +75,7 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
       // Filter by search query across order code, commands, and vehicles
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchesOrderCode = order.code.toLowerCase().includes(q);
+        const matchesOrderCode = (order.code || '').toLowerCase().includes(q);
 
         const primaryCmds = order.commandIds
           .map((id) => commands.find((c) => c.id === id))
@@ -83,17 +83,17 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
         const matchesCommand = primaryCmds.some(
           (cmd) =>
             cmd &&
-            (cmd.code.toLowerCase().includes(q) ||
-              cmd.material.toLowerCase().includes(q) ||
-              cmd.customer.toLowerCase().includes(q) ||
-              cmd.type.toLowerCase().includes(q))
+            ((cmd.code || '').toLowerCase().includes(q) ||
+              (cmd.material || '').toLowerCase().includes(q) ||
+              (cmd.customer || '').toLowerCase().includes(q) ||
+              (cmd.type || '').toLowerCase().includes(q))
         );
 
         const orderTrips = trips.filter((t) => t.orderId === order.id);
         const matchesVehicle = orderTrips.some(
           (t) =>
-            t.plateNumber.toLowerCase().includes(q) ||
-            t.driverName.toLowerCase().includes(q)
+            (t.plateNumber || '').toLowerCase().includes(q) ||
+            (t.driverName || '').toLowerCase().includes(q)
         );
 
         if (!matchesOrderCode && !matchesCommand && !matchesVehicle) {
