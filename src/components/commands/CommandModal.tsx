@@ -1,6 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Command, CommandType, CommandStatus } from '../../types';
+import { useStore } from '../../store/dispatchStore';
 import { Modal } from '../common/Modal';
+import { ComboboxInput } from '../common/ComboboxInput';
+import { SelectDropdown } from '../common/SelectDropdown';
+
+// Danh sách option cố định (giá trị value giữ nguyên khớp CommandType / CommandStatus)
+const TYPE_OPTIONS = [
+  { value: 'Nhập hàng', label: 'Nhập hàng (Inbound)' },
+  { value: 'Xuất hàng', label: 'Xuất hàng (Outbound)' },
+  { value: 'Vận chuyển nội bộ', label: 'Vận chuyển nội bộ' },
+  { value: 'Cân dịch vụ', label: 'Cân dịch vụ' },
+];
+
+const STATUS_OPTIONS = [
+  { value: 'Chờ thực hiện', label: 'Chờ thực hiện' },
+  { value: 'Đang chạy', label: 'Đang chạy' },
+  { value: 'Hoàn thành', label: 'Hoàn thành' },
+  { value: 'Đã hủy', label: 'Đã hủy' },
+];
 import { FilePlus2, Save, FileEdit } from 'lucide-react';
 
 interface CommandModalProps {
@@ -27,6 +45,27 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const [targetWeight, setTargetWeight] = useState<number>(100);
   const [status, setStatus] = useState<CommandStatus>('Chờ thực hiện');
   const [notes, setNotes] = useState('');
+  const [seller, setSeller] = useState('');
+
+  const { commands } = useStore();
+
+  // Gợi ý lịch sử: lấy giá trị unique từ các lệnh đã có để autocomplete (datalist)
+  const codeSuggestions = useMemo(
+    () => Array.from(new Set(commands.map((c) => (c.code || '').trim()).filter(Boolean))).sort(),
+    [commands]
+  );
+  const customerSuggestions = useMemo(
+    () => Array.from(new Set(commands.map((c) => (c.customer || '').trim()).filter(Boolean))).sort(),
+    [commands]
+  );
+  const sellerSuggestions = useMemo(
+    () => Array.from(new Set(commands.map((c) => (c.seller || '').trim()).filter(Boolean))).sort(),
+    [commands]
+  );
+  const materialSuggestions = useMemo(
+    () => Array.from(new Set(commands.map((c) => (c.material || '').trim()).filter(Boolean))).sort(),
+    [commands]
+  );
 
   useEffect(() => {
     if (initialData) {
@@ -37,6 +76,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       setTargetWeight(initialData.targetWeight);
       setStatus(initialData.status);
       setNotes(initialData.notes || '');
+      setSeller(initialData.seller || '');
     } else {
       // Auto-generate realistic code
       const nextNum = 100 + existingCount + 1;
@@ -47,13 +87,14 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       setTargetWeight(100);
       setStatus('Chờ thực hiện');
       setNotes('');
+      setSeller('');
     }
   }, [initialData, existingCount, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!customer.trim() || !material.trim() || targetWeight <= 0) {
-      alert('Vui lòng nhập đầy đủ thông tin Khách hàng, Vật tư và Khối lượng chỉ tiêu.');
+      alert('Vui lòng nhập đầy đủ thông tin Bên mua, Hàng hóa và Khối lượng chỉ tiêu.');
       return;
     }
 
@@ -62,6 +103,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
         code,
         type,
         customer,
+        seller: seller || undefined,
         material,
         targetWeight: Number(targetWeight),
         status,
@@ -72,6 +114,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
         code,
         type,
         customer,
+        seller: seller || undefined,
         material,
         targetWeight: Number(targetWeight),
         status,
@@ -101,12 +144,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
               Mã Lệnh Điều Động
             </label>
-            <input
-              type="text"
+            <ComboboxInput
               required
               value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              className="w-full px-3 py-2 text-sm font-mono font-bold rounded-lg border border-slate-300 dark:border-industrial-700 bg-slate-50 dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              onChange={(v) => setCode(v.toUpperCase())}
+              options={codeSuggestions}
+              inputClassName="w-full px-3 py-2 text-sm font-mono font-bold rounded-lg border border-slate-300 dark:border-industrial-700 bg-slate-50 dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
               placeholder="CMD-108"
             />
           </div>
@@ -116,31 +159,41 @@ export const CommandModal: React.FC<CommandModalProps> = ({
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
               Loại Nghiệp Vụ
             </label>
-            <select
+            <SelectDropdown
               value={type}
-              onChange={(e) => setType(e.target.value as CommandType)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-slate-50 dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-            >
-              <option value="Nhập hàng">Nhập hàng (Inbound)</option>
-              <option value="Xuất hàng">Xuất hàng (Outbound)</option>
-              <option value="Vận chuyển nội bộ">Vận chuyển nội bộ</option>
-              <option value="Cân dịch vụ">Cân dịch vụ</option>
-            </select>
+              onChange={(v) => setType(v as CommandType)}
+              options={TYPE_OPTIONS}
+              triggerClassName="bg-slate-50 dark:bg-industrial-950"
+            />
           </div>
         </div>
 
         {/* Customer */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-            Chủ Hàng / Khách Hàng / Đơn Vị Thuê
+            Bên Mua
           </label>
-          <input
-            type="text"
+          <ComboboxInput
             required
             value={customer}
-            onChange={(e) => setCustomer(e.target.value)}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+            onChange={setCustomer}
+            options={customerSuggestions}
+            inputClassName="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
             placeholder="VD: Công ty Xi Măng Vicem Hoàng Thạch"
+          />
+        </div>
+
+        {/* Seller — Bên Bán */}
+        <div>
+          <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+            Bên Bán
+          </label>
+          <ComboboxInput
+            value={seller}
+            onChange={setSeller}
+            options={sellerSuggestions}
+            inputClassName="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+            placeholder="VD: Công ty Khai Thác Khoáng Sản ABC"
           />
         </div>
 
@@ -150,12 +203,12 @@ export const CommandModal: React.FC<CommandModalProps> = ({
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
               Loại Hàng Hóa / Vật Tư
             </label>
-            <input
-              type="text"
+            <ComboboxInput
               required
               value={material}
-              onChange={(e) => setMaterial(e.target.value)}
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              onChange={setMaterial}
+              options={materialSuggestions}
+              inputClassName="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
               placeholder="VD: Thép cuộn D10, Cát san lấp..."
             />
           </div>
@@ -182,22 +235,17 @@ export const CommandModal: React.FC<CommandModalProps> = ({
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
             Trạng Thái Lệnh
           </label>
-          <select
+          <SelectDropdown
             value={status}
-            onChange={(e) => setStatus(e.target.value as CommandStatus)}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-          >
-            <option value="Chờ thực hiện">Chờ thực hiện</option>
-            <option value="Đang chạy">Đang chạy</option>
-            <option value="Hoàn thành">Hoàn thành</option>
-            <option value="Đã hủy">Đã hủy</option>
-          </select>
+            onChange={(v) => setStatus(v as CommandStatus)}
+            options={STATUS_OPTIONS}
+          />
         </div>
 
         {/* Notes */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-            Ghi Chú Vận Hành / Vị Trí Bãi Xả
+            Ghi Chú
           </label>
           <textarea
             rows={2}

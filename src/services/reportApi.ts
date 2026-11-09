@@ -1,4 +1,4 @@
-import { api } from './api';
+import { api, API_BASE_URL } from './api';
 
 export interface ReportFilter {
   tuNgay?: string; // YYYY-MM-DD
@@ -17,6 +17,8 @@ export interface WeighingReportItem {
   bienSoXe: string;
   laiXe: string;
   khachHang: string;
+  buyer?: string | null;
+  seller?: string | null;
   hangHoa: string;
   nghiepVu: string;
   khoiLuongGross: number;
@@ -24,6 +26,22 @@ export interface WeighingReportItem {
   khoiLuongNet: number;
   nguoiCan: string;
   trangThai: string;
+  // Thông tin ảnh chụp lượt cân
+  hasImage?: boolean;
+  tableWeighingImageId?: string | null;
+}
+
+export interface WeighingImageItem {
+  key: string;
+  label: string;
+  path: string;
+}
+
+export interface WeighingImageResponse {
+  soHD: string;
+  hasImage: boolean;
+  tableWeighingImageId?: string | null;
+  images: WeighingImageItem[];
 }
 
 export interface ReportSummary {
@@ -396,7 +414,18 @@ export const reportApi = {
       return filterLocalWeighings(filters);
     }
   },
+
+  async getWeighingImages(soHd: string): Promise<WeighingImageResponse> {
+    const response = await api.get<WeighingImageResponse>(
+      `/reports/weighing/${encodeURIComponent(soHd)}/images`,
+    );
+    return response.data;
+  },
 };
+
+export function buildImageViewUrl(relativePath: string): string {
+  return `${API_BASE_URL}/reports/images/view?path=${encodeURIComponent(relativePath)}`;
+}
 
 function filterLocalWeighings(filter: ReportFilter): ReportSummary {
   let list = [...FALLBACK_WEIGHINGS];
@@ -442,7 +471,9 @@ function filterLocalWeighings(filter: ReportFilter): ReportSummary {
 
   const page = filter.pageIndex || 1;
   const pageSize = filter.pageSize || 20;
-  const items = list.slice((page - 1) * pageSize, page * pageSize);
+  const items = list
+    .slice((page - 1) * pageSize, page * pageSize)
+    .map((it) => ({ ...it, buyer: it.buyer || it.khachHang }));
 
   return {
     tongLuotCan,

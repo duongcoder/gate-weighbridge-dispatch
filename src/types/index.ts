@@ -7,6 +7,7 @@ export interface Command {
   code: string;
   type: CommandType;
   customer: string;
+  seller?: string;
   material: string;
   targetWeight: number; // in Metric Tons (Tấn)
   completedWeight: number; // in Metric Tons (Tấn)

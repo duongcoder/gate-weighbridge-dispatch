@@ -19,6 +19,7 @@ import {
   FileSpreadsheet, 
   Eye, 
   RefreshCw, 
+  Camera,
   ChevronLeft, 
   ChevronRight, 
   CheckCircle2, 
@@ -26,6 +27,8 @@ import {
   FileText
 } from 'lucide-react';
 import { formatWeight } from '../../utils/formatters';
+import { WeighingImageModal } from './WeighingImageModal';
+import { DateInputVN } from '../common/DateInputVN';
 
 export const ReportsView: React.FC = () => {
   // Filter States
@@ -55,6 +58,9 @@ export const ReportsView: React.FC = () => {
 
   // Selected item for Detail Modal
   const [selectedTicket, setSelectedTicket] = useState<WeighingReportItem | null>(null);
+
+  // Selected item for Image Modal (xem ảnh chụp lượt cân)
+  const [imageTicket, setImageTicket] = useState<WeighingReportItem | null>(null);
 
   // Fetch report data
   const fetchReport = useCallback(async () => {
@@ -108,13 +114,16 @@ export const ReportsView: React.FC = () => {
     setPageIndex(1);
   };
 
-  // Export CSV / Excel with UTF-8 BOM
-  const handleExportExcel = () => {
+  // Xuất file Excel thật (.xlsx) bằng SheetJS — nạp động thư viện, mỗi trường tách bạch một cột
+  const handleExportExcel = async () => {
     const items = summary.items;
     if (!items || items.length === 0) {
       alert('Không có dữ liệu để xuất file.');
       return;
     }
+
+    // Nạp động xlsx để không làm phình bundle chính
+    const XLSX = await import('xlsx');
 
     const headers = [
       'STT',
@@ -122,7 +131,8 @@ export const ReportsView: React.FC = () => {
       'Ngày Giờ Cân',
       'Biển Số Xe',
       'Lái Xe',
-      'Khách Hàng / Đối Tác',
+      'Bên Mua',
+      'Bên Bán',
       'Hàng Hóa',
       'Loại Nghiệp Vụ',
       'Tổng (Gross - Tấn)',
@@ -132,50 +142,55 @@ export const ReportsView: React.FC = () => {
       'Trạng Thái'
     ];
 
-    const rows = items.map((it, idx) => [
+    const rows: (string | number)[][] = items.map((it, idx) => [
       idx + 1 + (pageIndex - 1) * pageSize,
-      `"${it.soPhieu}"`,
-      `"${new Date(it.ngayGioCan).toLocaleString('vi-VN')}"`,
-      `"${it.bienSoXe}"`,
-      `"${it.laiXe}"`,
-      `"${it.khachHang}"`,
-      `"${it.hangHoa}"`,
-      `"${it.nghiepVu}"`,
-      it.khoiLuongGross.toFixed(2),
-      it.khoiLuongTare.toFixed(2),
-      it.khoiLuongNet.toFixed(2),
-      `"${it.nguoiCan}"`,
-      `"${it.trangThai}"`
+      it.soPhieu,
+      new Date(it.ngayGioCan).toLocaleString('vi-VN'),
+      it.bienSoXe,
+      it.laiXe,
+      it.buyer || it.khachHang || '',
+      it.seller || '',
+      it.hangHoa,
+      it.nghiepVu,
+      Number(it.khoiLuongGross.toFixed(2)),
+      Number(it.khoiLuongTare.toFixed(2)),
+      Number(it.khoiLuongNet.toFixed(2)),
+      it.nguoiCan,
+      it.trangThai
     ]);
 
-    // Summary row
-    rows.push([
-      'TỔNG CỘNG',
-      `"${summary.tongLuotCan} lượt"`,
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      summary.tongSanLuongNet.toFixed(2),
-      '',
-      ''
-    ]);
+    // Dòng tổng cộng: canh đúng cột khối lượng Net (index 11), các cột khác để trống
+    const summaryRow: (string | number)[] = new Array(headers.length).fill('');
+    summaryRow[0] = 'TỔNG CỘNG';
+    summaryRow[1] = `${summary.tongLuotCan} lượt`;
+    summaryRow[11] = Number(summary.tongSanLuongNet.toFixed(2));
+    rows.push(summaryRow);
 
-    const csvContent = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\r\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
+
+    // Độ rộng cột hợp lý cho từng cột để mở file là đọc được ngay
+    worksheet['!cols'] = [
+      { wch: 6 },   // STT
+      { wch: 16 },  // Số Phiếu
+      { wch: 20 },  // Ngày Giờ Cân
+      { wch: 14 },  // Biển Số Xe
+      { wch: 20 },  // Lái Xe
+      { wch: 28 },  // Bên Mua
+      { wch: 24 },  // Bên Bán
+      { wch: 24 },  // Hàng Hóa
+      { wch: 16 },  // Loại Nghiệp Vụ
+      { wch: 16 },  // Tổng (Gross)
+      { wch: 14 },  // Bì (Tare)
+      { wch: 16 },  // Hàng (Net)
+      { wch: 18 },  // Người Cân
+      { wch: 12 }   // Trạng Thái
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'NhatKyCan');
+
     const dateFormatted = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    a.download = `BaoCao_TramCan_${dateFormatted}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+    XLSX.writeFile(workbook, `BaoCao_TramCan_${dateFormatted}.xlsx`);
   };
 
   // Print Report
@@ -233,24 +248,22 @@ export const ReportsView: React.FC = () => {
             </span>
 
             <div className="flex items-center gap-1.5">
-              <input
-                type="date"
+              <DateInputVN
                 value={tuNgay}
-                onChange={(e) => {
-                  setTuNgay(e.target.value);
+                onChange={(v) => {
+                  setTuNgay(v);
                   setPageIndex(1);
                 }}
-                className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-industrial-700 bg-slate-50 dark:bg-industrial-950 text-industrial-900 dark:text-white font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                title="Từ ngày"
               />
               <span className="text-xs text-slate-400 font-bold">-</span>
-              <input
-                type="date"
+              <DateInputVN
                 value={denNgay}
-                onChange={(e) => {
-                  setDenNgay(e.target.value);
+                onChange={(v) => {
+                  setDenNgay(v);
                   setPageIndex(1);
                 }}
-                className="px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-industrial-700 bg-slate-50 dark:bg-industrial-950 text-industrial-900 dark:text-white font-mono focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                title="Đến ngày"
               />
             </div>
 
@@ -459,7 +472,8 @@ export const ReportsView: React.FC = () => {
                 <th className="py-2.5 px-3">Số Phiếu</th>
                 <th className="py-2.5 px-3">Ngày Giờ</th>
                 <th className="py-2.5 px-3">Biển Số Xe</th>
-                <th className="py-2.5 px-3">Khách Hàng / Đối Tác</th>
+                <th className="py-2.5 px-3">Bên Mua</th>
+                <th className="py-2.5 px-3">Bên Bán</th>
                 <th className="py-2.5 px-3">Hàng Hóa</th>
                 <th className="py-2.5 px-3 text-center">Nghiệp Vụ</th>
                 <th className="py-2.5 px-3 text-right">Tổng (Gross)</th>
@@ -472,7 +486,7 @@ export const ReportsView: React.FC = () => {
             <tbody className="divide-y divide-slate-100 dark:divide-industrial-800/80">
               {summary.items.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="py-12 text-center text-slate-400">
+                  <td colSpan={13} className="py-12 text-center text-slate-400">
                     <FileText className="w-8 h-8 mx-auto mb-2 text-slate-300 dark:text-industrial-700" />
                     Không tìm thấy dữ liệu cân nào trong khoảng thời gian đã chọn.
                   </td>
@@ -497,8 +511,11 @@ export const ReportsView: React.FC = () => {
                         {it.bienSoXe}
                       </span>
                     </td>
-                    <td className="py-2.5 px-3 font-medium text-industrial-900 dark:text-white max-w-xs truncate" title={it.khachHang}>
-                      {it.khachHang}
+                    <td className="py-2.5 px-3 font-medium text-industrial-900 dark:text-white max-w-xs truncate" title={it.buyer || ''}>
+                      {it.buyer || '---'}
+                    </td>
+                    <td className="py-2.5 px-3 text-slate-600 dark:text-slate-400 max-w-xs truncate" title={it.seller || ''}>
+                      {it.seller || '---'}
                     </td>
                     <td className="py-2.5 px-3 text-slate-700 dark:text-slate-300 max-w-xs truncate" title={it.hangHoa}>
                       {it.hangHoa}
@@ -521,14 +538,29 @@ export const ReportsView: React.FC = () => {
                       {it.nguoiCan}
                     </td>
                     <td className="py-2.5 px-3 text-center print:hidden">
-                      <button
-                        type="button"
-                        onClick={() => setSelectedTicket(it)}
-                        className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-industrial-800 transition"
-                        title="Xem chi tiết phiếu cân"
-                      >
-                        <Eye className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center justify-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => setSelectedTicket(it)}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-amber-600 hover:bg-slate-100 dark:hover:bg-industrial-800 transition"
+                          title="Xem chi tiết phiếu cân"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setImageTicket(it)}
+                          disabled={!it.hasImage}
+                          className={
+                            it.hasImage
+                              ? 'p-1.5 rounded-lg text-indigo-500 hover:text-indigo-700 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition'
+                              : 'p-1.5 rounded-lg text-slate-300 dark:text-industrial-700 cursor-not-allowed'
+                          }
+                          title={it.hasImage ? 'Xem ảnh chụp lượt cân' : 'Phiếu cân không có ảnh'}
+                        >
+                          <Camera className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -656,9 +688,16 @@ export const ReportsView: React.FC = () => {
               </div>
 
               <div className="space-y-1 text-xs">
-                <span className="text-slate-400">Khách hàng / Đối tác:</span>
+                <span className="text-slate-400">Bên mua:</span>
                 <p className="font-bold text-industrial-900 dark:text-white text-sm">
-                  {selectedTicket.khachHang}
+                  {selectedTicket.buyer || selectedTicket.khachHang || '---'}
+                </p>
+              </div>
+
+              <div className="space-y-1 text-xs">
+                <span className="text-slate-400">Bên bán:</span>
+                <p className="font-medium text-slate-700 dark:text-slate-300 text-sm">
+                  {selectedTicket.seller || '---'}
                 </p>
               </div>
 
@@ -713,6 +752,15 @@ export const ReportsView: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* =========================================================================
+          5. WEIGHING IMAGE MODAL (Xem ảnh chụp lượt cân)
+          ========================================================================= */}
+      <WeighingImageModal
+        isOpen={!!imageTicket}
+        onClose={() => setImageTicket(null)}
+        ticket={imageTicket}
+      />
     </div>
   );
 };

@@ -97,7 +97,7 @@ export const TripDetailModal: React.FC<TripDetailModalProps> = ({
               <span className="font-mono font-bold text-amber-600 dark:text-amber-400">{trip.plateNumber}</span>
             </div>
             <div className="flex justify-between py-0.5">
-              <span className="text-slate-500">Rơ-moóc:</span>
+              <span className="text-slate-500">Cấp cành:</span>
               <span className="font-mono font-semibold">{vehicle?.trailerPlate || 'Không có'}</span>
             </div>
             <div className="flex justify-between py-0.5">

@@ -142,7 +142,7 @@ export const WeighingTicketModal: React.FC<WeighingTicketModalProps> = ({
                   <span className="font-mono font-black text-sm text-black">{trip.plateNumber}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Rơ-moóc:</span>{' '}
+                  <span className="text-gray-600">Cấp cành:</span>{' '}
                   <span className="font-mono font-bold">{vehicle?.trailerPlate || 'Không có'}</span>
                 </div>
                 <div>
@@ -154,8 +154,12 @@ export const WeighingTicketModal: React.FC<WeighingTicketModalProps> = ({
                   <span className="font-bold">{trip.transportCompany || vehicle?.transportCompany || '---'}</span>
                 </div>
                 <div>
-                  <span className="text-gray-600">Khách hàng / Chủ hàng:</span>{' '}
+                  <span className="text-gray-600">Bên mua:</span>{' '}
                   <span className="font-bold">{primaryCommand?.customer || '---'}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Bên bán:</span>{' '}
+                  <span className="font-bold">{primaryCommand?.seller || '---'}</span>
                 </div>
                 <div>
                   <span className="text-gray-600">Loại nghiệp vụ:</span>{' '}

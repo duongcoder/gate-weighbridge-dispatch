@@ -1,8 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { VehicleCard, VehicleStatus } from '../../types';
 import { Modal } from '../common/Modal';
+import { ComboboxInput } from '../common/ComboboxInput';
+import { SelectDropdown } from '../common/SelectDropdown';
+import { useStore } from '../../store/dispatchStore';
 import { Truck, Save } from 'lucide-react';
 import { soundFx } from '../../utils/audio';
+
+// Danh sách option cố định cho Trạng Thái (giá trị value giữ nguyên khớp VehicleStatus)
+const STATUS_OPTIONS = [
+  { value: 'Rảnh (Idle)', label: 'Rảnh (Sẵn sàng nhận lệnh)' },
+  { value: 'Đang trong trạm (In-Station)', label: 'Đang trong trạm' },
+  { value: 'Tạm khóa (Blocked)', label: 'Tạm khóa' },
+];
 
 interface VehicleModalProps {
   isOpen: boolean;
@@ -27,6 +37,26 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
   const [transportCompany, setTransportCompany] = useState('');
   const [defaultTareWeight, setDefaultTareWeight] = useState<number>(14.5);
   const [status, setStatus] = useState<VehicleStatus>('Rảnh (Idle)');
+
+  const { vehicles } = useStore();
+
+  // Gợi ý lịch sử: trích xuất giá trị unique từ các phương tiện đã có trong store
+  const plateSuggestions = useMemo(
+    () => Array.from(new Set(vehicles.map((v) => (v.plateNumber || '').trim()).filter(Boolean))).sort(),
+    [vehicles]
+  );
+  const trailerSuggestions = useMemo(
+    () => Array.from(new Set(vehicles.map((v) => (v.trailerPlate || '').trim()).filter(Boolean))).sort(),
+    [vehicles]
+  );
+  const companySuggestions = useMemo(
+    () => Array.from(new Set(vehicles.map((v) => (v.transportCompany || '').trim()).filter(Boolean))).sort(),
+    [vehicles]
+  );
+  const driverSuggestions = useMemo(
+    () => Array.from(new Set(vehicles.map((v) => (v.driverName || '').trim()).filter(Boolean))).sort(),
+    [vehicles]
+  );
 
   useEffect(() => {
     if (initialData) {
@@ -102,33 +132,33 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Plate & Trailer */}
+        {/* Biển số xe & Cấp cành */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
               Biển Số Xe Đầu Kéo / Xe Tải
             </label>
-            <input
-              type="text"
+            <ComboboxInput
               required
               autoFocus
               value={plateNumber}
-              onChange={(e) => setPlateNumber(e.target.value.toUpperCase())}
+              onChange={(v) => setPlateNumber(v.toUpperCase())}
+              options={plateSuggestions}
               placeholder="VD: 29H-123.45"
-              className="w-full px-3 py-2 text-sm font-mono font-bold rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none uppercase"
+              inputClassName="w-full px-3 py-2 text-sm font-mono font-bold rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none uppercase"
             />
           </div>
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-              Biển Số Rơ-moóc (Nếu có)
+              Cấp Cành
             </label>
-            <input
-              type="text"
+            <ComboboxInput
               value={trailerPlate}
-              onChange={(e) => setTrailerPlate(e.target.value.toUpperCase())}
-              placeholder="VD: 29R-012.34"
-              className="w-full px-3 py-2 text-sm font-mono font-bold rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none uppercase"
+              onChange={(v) => setTrailerPlate(v.toUpperCase())}
+              options={trailerSuggestions}
+              placeholder="VD: CC1"
+              inputClassName="w-full px-3 py-2 text-sm font-mono font-bold rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none uppercase"
             />
           </div>
         </div>
@@ -153,15 +183,15 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-              Doanh Nghiệp / Công Ty Vận Tải
+              Đơn Vị Vận Chuyển
             </label>
-            <input
-              type="text"
+            <ComboboxInput
               required
               value={transportCompany}
-              onChange={(e) => setTransportCompany(e.target.value)}
+              onChange={setTransportCompany}
+              options={companySuggestions}
               placeholder="VD: LogiTrans Bắc Nam"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              inputClassName="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
           </div>
         </div>
@@ -172,13 +202,13 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
               Họ Tên Lái Xe
             </label>
-            <input
-              type="text"
+            <ComboboxInput
               required
               value={driverName}
-              onChange={(e) => setDriverName(e.target.value)}
+              onChange={setDriverName}
+              options={driverSuggestions}
               placeholder="VD: Nguyễn Văn Hùng"
-              className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
+              inputClassName="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
             />
           </div>
 
@@ -201,15 +231,11 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
             Trạng Thái Phương Tiện
           </label>
-          <select
+          <SelectDropdown
             value={status}
-            onChange={(e) => setStatus(e.target.value as VehicleStatus)}
-            className="w-full px-3 py-2 text-sm rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-          >
-            <option value="Rảnh (Idle)">Rảnh (Sẵn sàng nhận lệnh)</option>
-            <option value="Đang trong trạm (In-Station)">Đang trong trạm</option>
-            <option value="Tạm khóa (Blocked)">Tạm khóa</option>
-          </select>
+            onChange={(v) => setStatus(v as VehicleStatus)}
+            options={STATUS_OPTIONS}
+          />
         </div>
 
         {/* Submit Actions */}

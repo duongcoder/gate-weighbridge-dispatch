@@ -7,7 +7,6 @@ import { formatWeight } from '../../utils/formatters';
 import { 
   Plus, 
   Trash2, 
-  Edit3, 
   CreditCard, 
   Truck, 
   Share2, 
@@ -105,7 +104,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
           <thead>
             <tr className="border-b border-slate-200 dark:border-industrial-800 bg-slate-50 dark:bg-industrial-950 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
               <th className="p-3 w-36">Biển Số Xe</th>
-              <th className="p-3 w-32">Rơ-moóc</th>
+              <th className="p-3 w-32">Cấp Cành</th>
               <th className="p-3">Lái Xe & Liên Hệ</th>
               <th className="p-3">Đơn Vị Vận Tải</th>
               <th className="p-3 w-32 text-right">Bì Định Mức</th>
@@ -129,7 +128,9 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                 return (
                   <tr
                     key={veh.id}
-                    className="hover:bg-slate-50/80 dark:hover:bg-industrial-800/50 transition-colors"
+                    onClick={() => onEditVehicle(veh)}
+                    title="Bấm để chỉnh sửa phương tiện"
+                    className="cursor-pointer hover:bg-slate-50/80 dark:hover:bg-industrial-800/50 transition-colors"
                   >
                     <td className="p-3">
                       <div className="font-mono font-black text-sm text-industrial-900 dark:text-white bg-slate-100 dark:bg-industrial-800 px-2 py-0.5 rounded border border-slate-300 dark:border-industrial-700 inline-block">
@@ -170,7 +171,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                           <Authorize form="Frm_DispatchOrder" action="them" mode="disable">
                             <button
                               type="button"
-                              onClick={() => onDispatchWithVehicle(veh.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDispatchWithVehicle(veh.id);
+                              }}
                               className="p-1.5 rounded text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/60"
                               title="Ghép lệnh cho xe này"
                             >
@@ -181,7 +185,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                         <Authorize form="Frm_CardVehicle" action="sua" mode="disable">
                           <button
                             type="button"
-                            onClick={() => toggleStatus(veh)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleStatus(veh);
+                            }}
                             className="p-1.5 rounded text-slate-500 hover:bg-slate-100 dark:hover:bg-industrial-800"
                             title={veh.status === 'Tạm khóa (Blocked)' ? 'Mở khóa xe' : 'Tạm khóa xe'}
                           >
@@ -192,20 +199,11 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                             )}
                           </button>
                         </Authorize>
-                        <Authorize form="Frm_CardVehicle" action="sua" mode="disable">
-                          <button
-                            type="button"
-                            onClick={() => onEditVehicle(veh)}
-                            className="p-1.5 rounded text-slate-500 hover:bg-slate-100 dark:hover:bg-industrial-800"
-                            title="Chỉnh sửa thông tin"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </button>
-                        </Authorize>
                         <Authorize form="Frm_CardVehicle" action="xoa" mode="disable">
                           <button
                             type="button"
-                            onClick={() => {
+                            onClick={(e) => {
+                              e.stopPropagation();
                               if (window.confirm(`Xác nhận xóa xe ${veh.plateNumber}?`)) {
                                 deleteVehicle(veh.id);
                               }
@@ -237,7 +235,9 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
           filteredVehicles.map((veh) => (
             <div
               key={veh.id}
-              className="p-4 rounded-xl border border-slate-200 dark:border-industrial-800 bg-white dark:bg-industrial-900 shadow-sm space-y-3"
+              onClick={() => onEditVehicle(veh)}
+              title="Bấm để chỉnh sửa phương tiện"
+              className="cursor-pointer p-4 rounded-xl border border-slate-200 dark:border-industrial-800 bg-white dark:bg-industrial-900 shadow-sm space-y-3"
             >
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
@@ -273,7 +273,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                   <Authorize form="Frm_DispatchOrder" action="them" mode="disable">
                     <button
                       type="button"
-                      onClick={() => onDispatchWithVehicle(veh.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDispatchWithVehicle(veh.id);
+                      }}
                       className="flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded bg-amber-500 text-white"
                     >
                       <Share2 className="w-3.5 h-3.5" />
@@ -284,7 +287,10 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                 <Authorize form="Frm_CardVehicle" action="sua" mode="disable">
                   <button
                     type="button"
-                    onClick={() => toggleStatus(veh)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleStatus(veh);
+                    }}
                     className="p-2 rounded text-slate-500 hover:bg-slate-100 dark:hover:bg-industrial-800"
                   >
                     {veh.status === 'Tạm khóa (Blocked)' ? (
@@ -294,19 +300,11 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                     )}
                   </button>
                 </Authorize>
-                <Authorize form="Frm_CardVehicle" action="sua" mode="disable">
-                  <button
-                    type="button"
-                    onClick={() => onEditVehicle(veh)}
-                    className="p-2 rounded text-slate-500 hover:bg-slate-100 dark:hover:bg-industrial-800"
-                  >
-                    <Edit3 className="w-4 h-4" />
-                  </button>
-                </Authorize>
                 <Authorize form="Frm_CardVehicle" action="xoa" mode="disable">
                   <button
                     type="button"
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation();
                       if (window.confirm(`Xác nhận xóa xe ${veh.plateNumber}?`)) {
                         deleteVehicle(veh.id);
                       }
