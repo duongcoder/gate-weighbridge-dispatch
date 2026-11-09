@@ -146,7 +146,7 @@ class DispatchStoreManager {
   // -------------------------------------------------------------
   // FETCH FROM REAL DATABASE (QLKhoHang_BA)
   // -------------------------------------------------------------
-  async fetchInitialData() {
+  async fetchInitialData(options: { preserveProgress?: boolean } = {}) {
     try {
       const [remoteCmds, remoteVehs, remoteOrders] = await Promise.all([
         commandApi.getCommands().catch((err) => {
@@ -187,6 +187,10 @@ class DispatchStoreManager {
         const newOrders: DispatchOrder[] = [];
         const newTrips: OrderTrip[] = [];
 
+        // Bản đồ dữ liệu hiện có để GIỮ NGUYÊN tiến trình khi polling ngầm (silent refresh)
+        const existingTripsById = new Map(this.trips.map((t) => [t.id, t]));
+        const existingOrdersById = new Map(this.orders.map((o) => [o.id, o]));
+
         orderMap.forEach((group, cmdId) => {
           const matchedCmd = this.commands.find((c) => c.id === cmdId.toString());
           const orderId = `dsp-cmd-${cmdId}`;
@@ -196,31 +200,40 @@ class DispatchStoreManager {
           let relationType: RelationType = '1-1';
           if (vehicleIds.length > 1) relationType = '1-N';
 
+          const existingOrder = options.preserveProgress ? existingOrdersById.get(orderId) : undefined;
           newOrders.push({
             id: orderId,
             code: orderCode,
             commandIds: [cmdId.toString()],
             vehicleIds,
             relationType,
-            status: 'ACTIVE',
-            createdAt: new Date().toISOString(),
-            notes: `Ghép lệnh ${orderCode}`,
+            status: existingOrder?.status ?? 'ACTIVE',
+            createdAt: existingOrder?.createdAt ?? new Date().toISOString(),
+            completedAt: existingOrder?.completedAt,
+            notes: existingOrder?.notes ?? `Ghép lệnh ${orderCode}`,
           });
 
           for (const item of group) {
             const vId = item.idCard.toString();
             const veh = this.vehicles.find((v) => v.id === vId);
-            newTrips.push({
-              id: `trip-${item.id}`,
-              orderId,
-              vehicleId: vId,
-              plateNumber: item.bsx || veh?.plateNumber || 'UNKNOWN',
-              driverName: item.nameUser || veh?.driverName || 'Tài xế vãng lai',
-              driverPhone: veh?.driverPhone,
-              transportCompany: item.sortCar || veh?.transportCompany || 'Đội xe nội bộ',
-              step: 'GATE_IN',
-              notes: `Chuyến ghép xe ${item.bsx} vào lệnh ${orderCode}`,
-            });
+            const tripId = `trip-${item.id}`;
+            const existingTrip = options.preserveProgress ? existingTripsById.get(tripId) : undefined;
+            if (existingTrip) {
+              // Giữ nguyên tiến trình (step, khối lượng cân) của chuyến đang vận hành
+              newTrips.push(existingTrip);
+            } else {
+              newTrips.push({
+                id: tripId,
+                orderId,
+                vehicleId: vId,
+                plateNumber: item.bsx || veh?.plateNumber || 'UNKNOWN',
+                driverName: item.nameUser || veh?.driverName || 'Tài xế vãng lai',
+                driverPhone: veh?.driverPhone,
+                transportCompany: item.sortCar || veh?.transportCompany || 'Đội xe nội bộ',
+                step: 'GATE_IN',
+                notes: `Chuyến ghép xe ${item.bsx} vào lệnh ${orderCode}`,
+              });
+            }
           }
         });
 
@@ -758,7 +771,7 @@ export function useStore() {
     setSearchQuery: (q: string) => dispatchStore.setSearchQuery(q),
     toggleDarkMode: () => dispatchStore.toggleDarkMode(),
     resetAllData: () => dispatchStore.resetAllData(),
-    fetchInitialData: () => dispatchStore.fetchInitialData(),
+    fetchInitialData: (options?: { preserveProgress?: boolean }) => dispatchStore.fetchInitialData(options),
     // Commands
     addCommand: (cmd: Omit<Command, 'id' | 'createdAt' | 'completedWeight'>) => dispatchStore.addCommand(cmd),
     updateCommand: (id: string, updates: Partial<Command>) => dispatchStore.updateCommand(id, updates),

@@ -29,6 +29,7 @@ import {
 import { formatWeight } from '../../utils/formatters';
 import { WeighingImageModal } from './WeighingImageModal';
 import { DateInputVN } from '../common/DateInputVN';
+import { usePolling, DEFAULT_POLL_INTERVAL_MS } from '../../hooks/usePolling';
 
 export const ReportsView: React.FC = () => {
   // Filter States
@@ -62,9 +63,9 @@ export const ReportsView: React.FC = () => {
   // Selected item for Image Modal (xem ảnh chụp lượt cân)
   const [imageTicket, setImageTicket] = useState<WeighingReportItem | null>(null);
 
-  // Fetch report data
-  const fetchReport = useCallback(async () => {
-    setLoading(true);
+  // Fetch report data (silent = true → tải ngầm, không bật spinner)
+  const fetchReport = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const filters: ReportFilter = {
         tuNgay: tuNgay || undefined,
@@ -85,13 +86,18 @@ export const ReportsView: React.FC = () => {
     } catch (err) {
       console.error('Lỗi khi tải báo cáo:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, [tuNgay, denNgay, nghiepVu, searchQuery, pageIndex, pageSize]);
 
   useEffect(() => {
     fetchReport();
   }, [fetchReport]);
+
+  // Polling giám sát realtime: tự động làm mới nhật ký cân & KPI ngầm mỗi 2 giây
+  usePolling(() => {
+    fetchReport(true);
+  }, DEFAULT_POLL_INTERVAL_MS);
 
   // Quick Preset Handlers
   const handlePresetToday = () => {

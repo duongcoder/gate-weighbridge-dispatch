@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
-import { useStore } from './store/dispatchStore';
+import { useStore, dispatchStore } from './store/dispatchStore';
 import { useAuthStore } from './store/authStore';
+import { usePolling, DEFAULT_POLL_INTERVAL_MS } from './hooks/usePolling';
+import { SyncIndicator } from './components/common/SyncIndicator';
 import { Command, VehicleCard, OrderTrip } from './types';
 
 // Layout & Navigation
@@ -95,6 +97,25 @@ export function App() {
       }
     };
   }, []);
+
+  // -------------------------------------------------------------
+  // POLLING GIÁM SÁT REALTIME: Tự động tải lại dữ liệu ngầm mỗi 5 giây
+  // (commands, vehicles, orders/trips) — KHÔNG bật spinner, KHÔNG reset tiến trình chuyến
+  // -------------------------------------------------------------
+  const [lastSyncAt, setLastSyncAt] = useState<Date | null>(null);
+
+  usePolling(
+    () => {
+      dispatchStore
+        .fetchInitialData({ preserveProgress: true })
+        .then(() => setLastSyncAt(new Date()))
+        .catch(() => {
+          /* im lặng: lỗi mạng tạm thời không làm gián đoạn UI */
+        });
+    },
+    DEFAULT_POLL_INTERVAL_MS,
+    isAuthenticated
+  );
 
   // -------------------------------------------------------------
   // OPERATIONAL REQUIREMENT: INITIALIZE AUTH FROM TOKEN ON STARTUP
@@ -392,6 +413,9 @@ export function App() {
         onClose={() => setAttachVehicleOrderId(null)}
         orderId={attachVehicleOrderId}
       />
+
+      {/* Real-time background sync indicator (chỉ hiển thị khi đã đăng nhập) */}
+      {isAuthenticated && <SyncIndicator lastSyncAt={lastSyncAt} />}
     </div>
   );
 }
