@@ -3,7 +3,6 @@ import confetti from 'canvas-confetti';
 import { useStore, dispatchStore } from './store/dispatchStore';
 import { useAuthStore } from './store/authStore';
 import { usePolling, DEFAULT_POLL_INTERVAL_MS } from './hooks/usePolling';
-import { SyncIndicator } from './components/common/SyncIndicator';
 import { Command, VehicleCard, OrderTrip } from './types';
 
 // Layout & Navigation
@@ -413,9 +412,6 @@ export function App() {
         onClose={() => setAttachVehicleOrderId(null)}
         orderId={attachVehicleOrderId}
       />
-
-      {/* Real-time background sync indicator (chỉ hiển thị khi đã đăng nhập) */}
-      {isAuthenticated && <SyncIndicator lastSyncAt={lastSyncAt} />}
     </div>
   );
 }

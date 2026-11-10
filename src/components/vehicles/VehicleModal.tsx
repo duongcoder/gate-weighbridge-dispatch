@@ -14,6 +14,9 @@ const STATUS_OPTIONS = [
   { value: 'Tạm khóa (Blocked)', label: 'Tạm khóa' },
 ];
 
+// Bì định mức đã ngừng dùng nghiệp vụ — gửi giá trị mặc định (backend không lưu trường này)
+const DEFAULT_TARE_WEIGHT = 0;
+
 interface VehicleModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -35,7 +38,6 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
   const [driverName, setDriverName] = useState('');
   const [driverPhone, setDriverPhone] = useState('');
   const [transportCompany, setTransportCompany] = useState('');
-  const [defaultTareWeight, setDefaultTareWeight] = useState<number>(14.5);
   const [status, setStatus] = useState<VehicleStatus>('Rảnh (Idle)');
 
   const { vehicles } = useStore();
@@ -66,7 +68,6 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
       setDriverName(initialData.driverName);
       setDriverPhone(initialData.driverPhone || '');
       setTransportCompany(initialData.transportCompany);
-      setDefaultTareWeight(initialData.defaultTareWeight);
       setStatus(initialData.status);
     } else {
       setCardNo('');
@@ -75,7 +76,6 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
       setDriverName('');
       setDriverPhone('');
       setTransportCompany('');
-      setDefaultTareWeight(14.5);
       setStatus('Rảnh (Idle)');
     }
   }, [initialData, isOpen]);
@@ -99,7 +99,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
         driverName: driverName.trim(),
         driverPhone: driverPhone.trim(),
         transportCompany: transportCompany.trim(),
-        defaultTareWeight: Number(defaultTareWeight),
+        defaultTareWeight: initialData.defaultTareWeight ?? DEFAULT_TARE_WEIGHT,
         status,
       });
     } else {
@@ -110,7 +110,7 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
         driverName: driverName.trim(),
         driverPhone: driverPhone.trim(),
         transportCompany: transportCompany.trim(),
-        defaultTareWeight: Number(defaultTareWeight),
+        defaultTareWeight: DEFAULT_TARE_WEIGHT,
         status,
       });
     }
@@ -128,11 +128,11 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
           <span>{initialData ? `Cập Nhật Phương Tiện: ${initialData.plateNumber}` : 'Đăng Ký Phương Tiện Mới'}</span>
         </div>
       }
-      subtitle="Quản lý định danh phương tiện và khối lượng bì tiêu chuẩn"
+      subtitle="Quản lý định danh phương tiện, tài xế và đơn vị vận chuyển"
       maxWidth="lg"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Biển số xe & Cấp cành */}
+        {/* Biển số xe, Cấp cành & Đơn vị vận chuyển */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
@@ -161,27 +161,8 @@ export const VehicleModal: React.FC<VehicleModalProps> = ({
               inputClassName="w-full px-3 py-2 text-sm font-mono font-bold rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none uppercase"
             />
           </div>
-        </div>
 
-        {/* Default Tare & Company */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
-              Khối Lượng Bì Định Mức (Tấn)
-            </label>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              required
-              value={defaultTareWeight}
-              onChange={(e) => setDefaultTareWeight(parseFloat(e.target.value) || 0)}
-              className="w-full px-3 py-2 text-sm font-mono font-bold rounded-lg border border-slate-300 dark:border-industrial-700 bg-white dark:bg-industrial-950 text-industrial-900 dark:text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
-              placeholder="14.50"
-            />
-          </div>
-
-          <div>
+          <div className="sm:col-span-2">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
               Đơn Vị Vận Chuyển
             </label>

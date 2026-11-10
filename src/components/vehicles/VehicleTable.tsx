@@ -3,7 +3,6 @@ import { VehicleCard, VehicleStatus } from '../../types';
 import { useStore } from '../../store/dispatchStore';
 import { VehicleStatusBadge } from '../common/Badge';
 import { Authorize } from '../common/Authorize';
-import { formatWeight } from '../../utils/formatters';
 import { 
   Plus, 
   Trash2, 
@@ -107,7 +106,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
               <th className="p-3 w-32">Cấp Cành</th>
               <th className="p-3">Lái Xe & Liên Hệ</th>
               <th className="p-3">Đơn Vị Vận Tải</th>
-              <th className="p-3 w-32 text-right">Bì Định Mức</th>
               <th className="p-3 w-36 text-center">Trạng Thái</th>
               <th className="p-3 w-36 text-right">Thao Tác</th>
             </tr>
@@ -115,7 +113,7 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
           <tbody className="divide-y divide-slate-200 dark:divide-industrial-800">
             {filteredVehicles.length === 0 ? (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-slate-400 dark:text-slate-500">
+                <td colSpan={6} className="p-8 text-center text-slate-400 dark:text-slate-500">
                   Không tìm thấy xe nào phù hợp với bộ lọc.
                 </td>
               </tr>
@@ -151,9 +149,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                     </td>
                     <td className="p-3 text-slate-700 dark:text-slate-300 font-medium">
                       {veh.transportCompany || '---'}
-                    </td>
-                    <td className="p-3 text-right font-mono font-bold text-slate-800 dark:text-slate-200">
-                      {formatWeight(veh.defaultTareWeight)}
                     </td>
                     <td className="p-3 text-center">
                       <div className="flex flex-col items-center gap-1">
@@ -258,12 +253,6 @@ export const VehicleTable: React.FC<VehicleTableProps> = ({
                 <div className="flex justify-between">
                   <span className="text-slate-500">Vận tải:</span>
                   <span className="font-medium">{veh.transportCompany || '---'}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-slate-500">Bì định mức:</span>
-                  <span className="font-mono font-bold text-amber-600 dark:text-amber-400">
-                    {formatWeight(veh.defaultTareWeight)}
-                  </span>
                 </div>
               </div>
 
