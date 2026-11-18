@@ -295,7 +295,7 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                     <div
                       key={veh.id}
                       onClick={() => toggleVehicle(veh.id)}
-                      className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between gap-3 ${
+                      className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center gap-3 ${
                         isChecked
                           ? 'border-amber-500 bg-amber-50/60 dark:bg-amber-950/40 ring-1 ring-amber-500'
                           : 'border-slate-200 dark:border-industrial-800 bg-white dark:bg-industrial-900 hover:border-slate-300'
@@ -320,13 +320,6 @@ export const DispatchWizard: React.FC<DispatchWizardProps> = ({
                           <div className="text-xs text-slate-600 dark:text-slate-400 mt-1">
                             Lái xe: <span className="font-medium text-slate-800 dark:text-slate-200">{veh.driverName}</span> ({veh.driverPhone || '---'})
                           </div>
-                        </div>
-                      </div>
-
-                      <div className="text-right text-xs">
-                        <div className="text-slate-400 text-[10px]">Bì định mức:</div>
-                        <div className="font-mono font-bold text-slate-800 dark:text-slate-200">
-                          {formatWeight(veh.defaultTareWeight)}
                         </div>
                       </div>
                     </div>

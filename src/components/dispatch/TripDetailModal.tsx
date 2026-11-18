@@ -112,10 +112,6 @@ export const TripDetailModal: React.FC<TripDetailModalProps> = ({
               <span className="text-slate-500">Đơn vị vận tải:</span>
               <span className="font-medium text-right">{trip.transportCompany || vehicle?.transportCompany || '---'}</span>
             </div>
-            <div className="flex justify-between py-0.5">
-              <span className="text-slate-500">Bì định mức mặc định:</span>
-              <span className="font-mono font-bold">{formatWeight(vehicle?.defaultTareWeight)}</span>
-            </div>
           </div>
 
           {/* Column 2: Order & Cargo */}

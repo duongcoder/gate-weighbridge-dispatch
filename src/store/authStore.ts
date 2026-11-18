@@ -13,7 +13,7 @@ export const CHUC_NANG_LIST: ChucNang[] = [
   {
     MaChucNang: 'Frm_CardVehicle',
     TenChucNang: 'Quản lý Phương Tiện',
-    MoTa: 'Đăng ký xe, cài đặt bì định mức và quản lý danh sách xe',
+    MoTa: 'Đăng ký xe, quản lý tài xế và danh sách xe',
     Nhom: 'Nghiệp vụ vận tải',
   },
   {
