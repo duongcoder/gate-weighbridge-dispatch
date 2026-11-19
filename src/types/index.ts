@@ -1,6 +1,6 @@
 export type CommandType = 'Nhập hàng' | 'Xuất hàng' | 'Vận chuyển nội bộ' | 'Cân dịch vụ';
 
-export type CommandStatus = 'Chờ thực hiện' | 'Đang chạy' | 'Hoàn thành' | 'Đã hủy';
+export type CommandStatus = 'Không kích hoạt' | 'Đang chạy' | 'Hoàn thành';
 
 export interface Command {
   id: string;

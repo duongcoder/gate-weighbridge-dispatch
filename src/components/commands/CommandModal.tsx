@@ -14,10 +14,9 @@ const TYPE_OPTIONS = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'Chờ thực hiện', label: 'Chờ thực hiện' },
+  { value: 'Không kích hoạt', label: 'Không kích hoạt' },
   { value: 'Đang chạy', label: 'Đang chạy' },
   { value: 'Hoàn thành', label: 'Hoàn thành' },
-  { value: 'Đã hủy', label: 'Đã hủy' },
 ];
 import { FilePlus2, Save, FileEdit } from 'lucide-react';
 
@@ -43,7 +42,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
   const [customer, setCustomer] = useState('');
   const [material, setMaterial] = useState('');
   const [targetWeight, setTargetWeight] = useState<number>(100);
-  const [status, setStatus] = useState<CommandStatus>('Chờ thực hiện');
+  const [status, setStatus] = useState<CommandStatus>('Không kích hoạt');
   const [notes, setNotes] = useState('');
   const [seller, setSeller] = useState('');
 
@@ -85,7 +84,7 @@ export const CommandModal: React.FC<CommandModalProps> = ({
       setCustomer('');
       setMaterial('');
       setTargetWeight(100);
-      setStatus('Chờ thực hiện');
+      setStatus('Không kích hoạt');
       setNotes('');
       setSeller('');
     }

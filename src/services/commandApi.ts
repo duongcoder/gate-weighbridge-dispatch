@@ -20,6 +20,7 @@ export interface BackendCommandItem {
   statusCode?: number;
   price?: number;
   rate?: number;
+  /** Cờ tín hiệu thay đổi lệnh (1 = có thay đổi, 0 = không) do Backend quản lý — KHÔNG phải đơn vị tính */
   unit?: number;
   notes?: string;
   createdAt?: string;
@@ -38,7 +39,6 @@ export interface CreateCommandPayload {
   completedWeight?: number;
   price?: number;
   rate?: number;
-  unit?: number;
   status?: string;
   statusCode?: number;
   notes?: string;
@@ -55,7 +55,7 @@ export function mapBackendCommandToFrontend(item: BackendCommandItem): Command {
     material: item.material || 'Hàng tổng hợp',
     targetWeight: item.targetWeight ?? 0,
     completedWeight: item.completedWeight ?? 0,
-    status: (item.status as CommandStatus) || 'Chờ thực hiện',
+    status: (item.status as CommandStatus) || 'Không kích hoạt',
     notes: item.notes || '',
     createdAt: item.createdAt || new Date().toISOString(),
   };

@@ -43,10 +43,8 @@ export const CommandStatusBadge: React.FC<{ status: CommandStatus }> = ({ status
       return <Badge variant="emerald"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />Hoàn thành</Badge>;
     case 'Đang chạy':
       return <Badge variant="amber"><span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />Đang chạy</Badge>;
-    case 'Chờ thực hiện':
-      return <Badge variant="sky"><span className="w-1.5 h-1.5 rounded-full bg-sky-500" />Chờ thực hiện</Badge>;
-    case 'Đã hủy':
-      return <Badge variant="rose"><span className="w-1.5 h-1.5 rounded-full bg-rose-500" />Đã hủy</Badge>;
+    case 'Không kích hoạt':
+      return <Badge variant="sky"><span className="w-1.5 h-1.5 rounded-full bg-sky-500" />Không kích hoạt</Badge>;
     default:
       return <Badge>{status}</Badge>;
   }

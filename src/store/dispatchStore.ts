@@ -479,7 +479,7 @@ class DispatchStoreManager {
 
     const cmdIdSet = new Set(commandIds);
     this.commands = this.commands.map((c) => {
-      if (cmdIdSet.has(c.id) && c.status === 'Chờ thực hiện') {
+      if (cmdIdSet.has(c.id) && c.status === 'Không kích hoạt') {
         return { ...c, status: 'Đang chạy' };
       }
       return c;

@@ -128,10 +128,9 @@ export const CommandTable: React.FC<CommandTableProps> = ({
               className="px-2.5 py-1.5 rounded-lg border border-slate-300 dark:border-industrial-700 bg-slate-50 dark:bg-industrial-950 text-xs text-industrial-900 dark:text-white font-medium focus:ring-1 focus:ring-amber-500 focus:outline-none"
             >
               <option value="ALL">Tất cả trạng thái</option>
-              <option value="Chờ thực hiện">Chờ thực hiện</option>
+              <option value="Không kích hoạt">Không kích hoạt</option>
               <option value="Đang chạy">Đang chạy</option>
               <option value="Hoàn thành">Hoàn thành</option>
-              <option value="Đã hủy">Đã hủy</option>
             </select>
           </div>
         </div>
