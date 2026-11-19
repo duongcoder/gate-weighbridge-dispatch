@@ -57,5 +57,19 @@ export const orderApi = {
     const res = await api.delete<{ success: boolean }>(`/orders/${id}`);
     return res.data;
   },
+
+  // Hoàn tất chuyến: giải phóng xe về trạng thái Rảnh (persist lên backend).
+  // Hỗ trợ xe vãng lai: gửi kèm biển số (licensePlate) làm DỰ PHÒNG khi CardId không khớp dbo.Card.
+  async completeVehicle(
+    cardId: number,
+    licensePlate?: string,
+    gateId?: number,
+  ): Promise<{ success: boolean; cardId: number; licensePlate?: string; status: string; message: string }> {
+    const res = await api.post<{ success: boolean; cardId: number; licensePlate?: string; status: string; message: string }>(
+      '/orders/complete-vehicle',
+      { cardId, licensePlate, gateId },
+    );
+    return res.data;
+  },
 };
 

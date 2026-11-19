@@ -585,6 +585,18 @@ class DispatchStoreManager {
           return cmd;
         });
       }
+
+      // PERSIST: giải phóng xe trên Backend để polling ngầm (2s) không ghi đè trạng thái về "Trong trạm".
+      // Hỗ trợ XE VÃNG LAI: gửi kèm biển số làm dự phòng khi CardId là ID tạm / không khớp dbo.Card.
+      const releasedCardNum = Number(updatedTrip.vehicleId);
+      const cardIdToSend = isNaN(releasedCardNum) ? 0 : releasedCardNum;
+      const releasedPlate =
+        updatedTrip.plateNumber || this.vehicles.find((v) => v.id === updatedTrip.vehicleId)?.plateNumber;
+      if (cardIdToSend > 0 || releasedPlate) {
+        orderApi.completeVehicle(cardIdToSend, releasedPlate).catch((err) =>
+          console.warn('Lỗi gọi API completeVehicle (giải phóng xe):', err)
+        );
+      }
     }
 
     this.trips = this.trips.map((t) => (t.id === tripId ? updatedTrip : t));
@@ -733,6 +745,21 @@ class DispatchStoreManager {
     saveStorage(STORAGE_KEYS.VEHICLES, this.vehicles);
     saveStorage(STORAGE_KEYS.ORDERS, this.orders);
     this.notify();
+
+    // PERSIST: giải phóng tất cả xe của lệnh trên Backend (chống polling ngầm ghi đè trạng thái).
+    // Gửi kèm biển số để hỗ trợ cả XE VÃNG LAI (CardId có thể là ID tạm / không khớp dbo.Card).
+    tripVehicleIds.forEach((vId) => {
+      const cardNum = Number(vId);
+      const cardIdToSend = isNaN(cardNum) ? 0 : cardNum;
+      const plate =
+        this.vehicles.find((v) => v.id === vId)?.plateNumber ||
+        this.trips.find((t) => t.vehicleId === vId)?.plateNumber;
+      if (cardIdToSend > 0 || plate) {
+        orderApi.completeVehicle(cardIdToSend, plate).catch((err) =>
+          console.warn('Lỗi gọi API completeVehicle (completeOrder):', err)
+        );
+      }
+    });
   }
 
   // -------------------------------------------------------------
