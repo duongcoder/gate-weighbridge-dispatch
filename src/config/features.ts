@@ -14,3 +14,13 @@
  * - `true`: Hiển thị lại đầy đủ — dành cho khách hàng cần theo dõi quy trình 5 bước.
  */
 export const SHOW_FIVE_STEP_PROGRESS = false;
+
+/**
+ * Bật/tắt chế độ "BẢNG DANH SÁCH XE" (bảng phẳng) ở tab Điều Phối Ghép Lệnh.
+ *
+ * - `false` (mặc định hiện tại): ẨN nút chuyển đổi chế độ trên thanh công cụ; tab Điều Phối
+ *   luôn hiển thị DUY NHẤT chế độ "GỘP THEO LỆNH" (danh sách bảng nhóm theo lệnh).
+ *   Toàn bộ code của `DispatchTableView.tsx` VẪN ĐƯỢC GIỮ LẠI (không xoá).
+ * - `true`: hiện lại nút chuyển đổi để dùng lại giao diện "Bảng Danh Sách Xe".
+ */
+export const SHOW_DISPATCH_TABLE_VIEW = false;

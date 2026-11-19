@@ -12,6 +12,33 @@ export interface BackendOrderItem {
   bsContainer?: string;
   nameUser?: string;
   sortCar?: string;
+  /** Trạng thái lệnh trong dbo.command: 0 = Không kích hoạt, 1 = Đang chạy, 2 = Hoàn thành */
+  commandStatus?: number;
+  /**
+   * Trạng thái THỰC TẾ của phương tiện trong dbo.Card:
+   *   true  = Rảnh (Sẵn sàng) — xe đã rời trạm ⇒ chuyến đã HOÀN TẤT
+   *   false = Đang trong trạm (In-Station) — xe đang vận hành
+   */
+  cardStatus?: boolean;
+  /** Nhãn trạng thái tương ứng (đồng bộ với tab Quản Lý Lệnh) */
+  commandStatusText?: string;
+}
+
+/** Payload hoàn tất lệnh điều phối (POST /api/orders/complete-order) */
+export interface CompleteOrderPayload {
+  commandIds: number[];
+  cardIds?: number[];
+  releaseVehicles?: boolean;
+  cleanupOrderRows?: boolean;
+  gateId?: number;
+}
+
+export interface CompleteOrderResult {
+  success: boolean;
+  completedCommands: number;
+  releasedCards: number;
+  removedOrderRows: number;
+  message: string;
 }
 
 export interface AttachPayload {
@@ -50,6 +77,13 @@ export const orderApi = {
 
   async batchDispatch(data: BatchDispatchPayload): Promise<{ success: boolean; createdCount: number }> {
     const res = await api.post<{ success: boolean; createdCount: number }>('/orders/batch', data);
+    return res.data;
+  },
+
+  // HOÀN TẤT LỆNH ĐIỀU PHỐI (nút "Hoàn tất lệnh"): Backend đồng bộ dbo.command.Status = 2 + Unit = 1
+  // và giải phóng xe dbo.Card.Status = true — tất cả trong MỘT transaction.
+  async completeOrder(data: CompleteOrderPayload): Promise<CompleteOrderResult> {
+    const res = await api.post<CompleteOrderResult>('/orders/complete-order', data);
     return res.data;
   },
 

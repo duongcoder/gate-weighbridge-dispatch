@@ -12,6 +12,16 @@ import {
   FileText 
 } from 'lucide-react';
 
+/**
+ * ============================================================================
+ * ⚠️ TẠM KHÔNG DÙNG (từ bản tái cấu trúc tab Điều Phối Ghép Lệnh)
+ * ============================================================================
+ * Chế độ "Gộp Theo Lệnh" đã được chuyển từ dạng THẺ LƯỚI (Card/Grid) sang dạng
+ * DANH SÁCH BẢNG — xem `DispatchOrderListView.tsx` / `DispatchTable.tsx`.
+ * File này được GIỮ LẠI NGUYÊN VẸN để có thể quay về giao diện thẻ khi cần
+ * (chỉ cần import lại `TripCard` trong `DispatchKanban.tsx`).
+ */
+
 interface TripCardProps {
   trip: OrderTrip;
   onOpenWeighing: (trip: OrderTrip) => void;

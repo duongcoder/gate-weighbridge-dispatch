@@ -42,6 +42,9 @@ export type GateStep =
 
 export type RelationType = '1-1' | '1-N' | 'N-1' | 'N-N';
 
+/** Bộ lọc "Trạng thái lệnh" ở tab Điều Phối Ghép Lệnh — CHỈ 2 chế độ (không còn "Tất cả") */
+export type OrderStatusFilter = 'ACTIVE' | 'COMPLETED';
+
 export interface OrderTrip {
   id: string;
   orderId: string;

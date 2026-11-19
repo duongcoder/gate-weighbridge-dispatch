@@ -1,12 +1,10 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../store/dispatchStore';
-import { OrderTrip } from '../../types';
-import { TripCard } from './TripCard';
+import { OrderTrip, OrderStatusFilter } from '../../types';
 import { TripDetailModal } from './TripDetailModal';
 import { DispatchTableView } from './DispatchTableView';
-import { RelationBadge } from '../common/Badge';
-import { formatWeight } from '../../utils/formatters';
-import { SHOW_FIVE_STEP_PROGRESS } from '../../config/features';
+import { DispatchOrderListView } from './DispatchOrderListView';
+import { SHOW_FIVE_STEP_PROGRESS, SHOW_DISPATCH_TABLE_VIEW } from '../../config/features';
 import { Authorize } from '../common/Authorize';
 import { 
   Plus, 
@@ -16,11 +14,18 @@ import {
 } from 'lucide-react';
 
 /**
- * Nhãn hiển thị cho bộ lọc "Trạng thái lệnh" (map từ DispatchOrder.status).
- * Thứ tự khoá = thứ tự option trong dropdown.
+ * Bộ lọc "Trạng thái lệnh" của tab Điều Phối Ghép Lệnh — CHỈ 2 chế độ:
+ *   ACTIVE    = Đang chạy
+ *   COMPLETED = Hoàn thành
+ * (Đã loại bỏ hoàn toàn lựa chọn "Tất cả" — không còn nhánh xử lý 'ALL'.)
+ * Kiểu `OrderStatusFilter` được khai báo chung tại `src/types/index.ts`.
  */
+
+/** Xe đang vận hành = chuyến chưa hoàn tất (tương ứng Card.Status = false / TRONG TRẠM) */
+const isTripRunning = (trip: OrderTrip): boolean => trip.step !== 'COMPLETED';
+
+/** Nhãn hiển thị cho bộ lọc (map từ DispatchOrder.status). Thứ tự khoá = thứ tự option. */
 const ORDER_STATUS_LABELS: Record<string, string> = {
-  ALL: 'Tất cả',
   ACTIVE: 'Đang chạy',
   COMPLETED: 'Hoàn thành',
 };
@@ -38,10 +43,13 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
   onOpenTicket,
   onAttachVehicle,
 }) => {
-  const { trips, orders, commands, searchQuery, completeOrder } = useStore();
-  const [viewMode, setViewMode] = useState<'TABLE' | 'LIST'>('TABLE');
-  // Bộ lọc Trạng thái lệnh: ALL (Tất cả) | ACTIVE (Đang chạy) | COMPLETED (Hoàn thành)
-  const [statusFilter, setStatusFilter] = useState<string>('ALL');
+  const { trips, orders, commands, searchQuery } = useStore();
+  // Mặc định LUÔN là "Gộp Theo Lệnh"; chế độ "Bảng Danh Sách Xe" chỉ dùng lại được khi
+  // SHOW_DISPATCH_TABLE_VIEW = true (xem src/config/features.ts).
+  const [viewMode, setViewMode] = useState<'TABLE' | 'LIST'>('LIST');
+  // Bộ lọc Trạng thái lệnh — CHỈ 2 chế độ: ACTIVE (Đang chạy) | COMPLETED (Hoàn thành).
+  // Mặc định ACTIVE để mở tab lên là thấy ngay các lệnh đang vận hành.
+  const [statusFilter, setStatusFilter] = useState<OrderStatusFilter>('ACTIVE');
 
   // Selected trip for full detail modal
   const [detailTrip, setDetailTrip] = useState<OrderTrip | null>(null);
@@ -54,8 +62,14 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
         ? commands.find((c) => c.id === order.commandIds[0])
         : undefined;
 
-      // Trạng thái lệnh filter (Đang chạy / Hoàn thành) — áp theo lệnh cha của chuyến
-      if (statusFilter !== 'ALL' && order?.status !== statusFilter) {
+      // LỌC THÔNG MINH theo trạng thái lệnh:
+      //   - Đang chạy  → CHỈ lệnh ACTIVE + CHỈ xe đang vận hành (chuyến chưa hoàn tất)
+      //   - Hoàn thành → CHỈ lệnh ĐÃ hoàn thành (lịch sử) + toàn bộ xe của lệnh đó
+      if (statusFilter === 'ACTIVE') {
+        if (order?.status !== 'ACTIVE' || !isTripRunning(trip)) {
+          return false;
+        }
+      } else if (order?.status !== 'COMPLETED') {
         return false;
       }
 
@@ -79,8 +93,17 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
   // 2. Filter orders for VIEW 3 (LIST / Gộp Theo Lệnh)
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      // Trạng thái lệnh filter (Đang chạy / Hoàn thành)
-      if (statusFilter !== 'ALL' && order.status !== statusFilter) {
+      const groupTrips = trips.filter((t) => t.orderId === order.id);
+
+      // LỌC THÔNG MINH (khớp đúng số xe hiển thị trong tiêu đề nhóm):
+      //   - Đang chạy  → lệnh ACTIVE và còn ≥1 xe ĐANG vận hành
+      //   - Hoàn thành → CHỈ lệnh ĐÃ hoàn thành (dbo.command.Status = 2) — xem như LỊCH SỬ,
+      //     KHÔNG trộn nhóm "Đang điều phối" vào danh sách lịch sử.
+      if (statusFilter === 'ACTIVE') {
+        if (order.status !== 'ACTIVE' || !groupTrips.some(isTripRunning)) {
+          return false;
+        }
+      } else if (order.status !== 'COMPLETED') {
         return false;
       }
 
@@ -117,20 +140,31 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
     });
   }, [orders, statusFilter, searchQuery, commands, trips]);
 
-  const activeTripsCount = filteredTrips.filter((t) => t.step !== 'COMPLETED').length;
+  // Tổng số xe THỰC TẾ đang hiển thị trong chế độ "Gộp Theo Lệnh"
+  // (= tổng số xe ở tiêu đề các nhóm lệnh, khớp với bộ lọc thông minh theo trạng thái xe)
+  const visibleTripsCount = useMemo(
+    () =>
+      filteredOrders.reduce((sum, order) => {
+        const groupTrips = trips.filter((t) => t.orderId === order.id);
+        // Đang chạy: chỉ đếm xe đang vận hành • Lịch sử: đếm TOÀN BỘ xe của lệnh đã hoàn thành
+        const shown = statusFilter === 'ACTIVE' ? groupTrips.filter(isTripRunning) : groupTrips;
+        return sum + shown.length;
+      }, 0),
+    [filteredOrders, trips, statusFilter]
+  );
 
   return (
     <div className="space-y-4">
       {/* Top Controls & View Toggle Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-industrial-900 p-3.5 rounded-xl border border-slate-200 dark:border-industrial-800 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Trạng thái lệnh Filter (Tất cả / Đang chạy / Hoàn thành) */}
+          {/* Trạng thái lệnh Filter — CHỈ 2 chế độ: Đang chạy / Hoàn thành */}
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <Filter className="w-3.5 h-3.5" />
             <span>Trạng thái lệnh:</span>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => setStatusFilter(e.target.value as OrderStatusFilter)}
               className="px-2 py-1 rounded-lg border border-slate-300 dark:border-industrial-700 bg-slate-50 dark:bg-industrial-950 text-xs text-industrial-900 dark:text-white font-medium focus:ring-1 focus:ring-amber-500 focus:outline-none"
             >
               {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
@@ -142,43 +176,49 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
           </div>
 
           <span className="text-xs px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-bold">
-            {activeTripsCount} xe đang vận hành {statusFilter !== 'ALL' ? `(${filteredOrders.length} lệnh)` : ''}
+            {statusFilter === 'ACTIVE'
+              ? `${visibleTripsCount} xe đang vận hành (${filteredOrders.length} lệnh Đang chạy)`
+              : `${visibleTripsCount} xe đã hoàn thành (${filteredOrders.length} lệnh đã hoàn thành)`}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
-          {/* View Switcher: Table View & Grouped View */}
-          <div className="flex items-center bg-slate-100 dark:bg-industrial-950 p-1 rounded-lg border border-slate-200 dark:border-industrial-800">
-            {/* 1. Dispatch Table View */}
-            <button
-              type="button"
-              onClick={() => setViewMode('TABLE')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition ${
-                viewMode === 'TABLE'
-                  ? 'bg-white dark:bg-industrial-800 text-amber-600 dark:text-amber-400 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title={SHOW_FIVE_STEP_PROGRESS ? 'Xem danh sách xe phẳng với thanh tiến trình mini stepper' : 'Xem danh sách xe dạng bảng chi tiết'}
-            >
-              <TableProperties className="w-3.5 h-3.5" />
-              <span>Bảng Danh Sách Xe</span>
-            </button>
+          {/* View Switcher: Table View & Grouped View —
+              TẠM ẨN theo cờ SHOW_DISPATCH_TABLE_VIEW (src/config/features.ts).
+              Đặt = true để hiện lại nút chuyển đổi và dùng lại "Bảng Danh Sách Xe". */}
+          {SHOW_DISPATCH_TABLE_VIEW && (
+            <div className="flex items-center bg-slate-100 dark:bg-industrial-950 p-1 rounded-lg border border-slate-200 dark:border-industrial-800">
+              {/* 1. Dispatch Table View */}
+              <button
+                type="button"
+                onClick={() => setViewMode('TABLE')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition ${
+                  viewMode === 'TABLE'
+                    ? 'bg-white dark:bg-industrial-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title={SHOW_FIVE_STEP_PROGRESS ? 'Xem danh sách xe phẳng với thanh tiến trình mini stepper' : 'Xem danh sách xe dạng bảng chi tiết'}
+              >
+                <TableProperties className="w-3.5 h-3.5" />
+                <span>Bảng Danh Sách Xe</span>
+              </button>
 
-            {/* 2. Grouped by Order */}
-            <button
-              type="button"
-              onClick={() => setViewMode('LIST')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition ${
-                viewMode === 'LIST'
-                  ? 'bg-white dark:bg-industrial-800 text-amber-600 dark:text-amber-400 shadow-sm'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-              title="Gộp xe theo từng lệnh điều phối cha"
-            >
-              <List className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Gộp Theo Lệnh</span>
-            </button>
-          </div>
+              {/* 2. Grouped by Order */}
+              <button
+                type="button"
+                onClick={() => setViewMode('LIST')}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold transition ${
+                  viewMode === 'LIST'
+                    ? 'bg-white dark:bg-industrial-800 text-amber-600 dark:text-amber-400 shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                }`}
+                title="Gộp xe theo từng lệnh điều phối cha"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Gộp Theo Lệnh</span>
+              </button>
+            </div>
+          )}
 
           {/* New Dispatch Wizard button */}
           <Authorize form="Frm_DispatchOrder" action="them" mode="disable">
@@ -207,115 +247,19 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
       )}
 
       {/* =========================================================================
-          VIEW 3: GROUPED BY DISPATCH ORDER (Parent-Child Tree)
+          VIEW 3: "GỘP THEO LỆNH" — dạng DANH SÁCH BẢNG nhóm theo lệnh điều phối.
+          (Giao diện thẻ lưới trước đây được GIỮ LẠI trong TripCard.tsx nếu cần quay về.)
           ========================================================================= */}
       {viewMode === 'LIST' && (
-        <div className="space-y-4">
-          {filteredOrders.length === 0 ? (
-            <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-white dark:bg-industrial-900 rounded-xl border border-slate-200 dark:border-industrial-800">
-              Không tìm thấy lệnh điều phối nào phù hợp với bộ lọc trạng thái «{ORDER_STATUS_LABELS[statusFilter] ?? statusFilter}» hoặc từ khóa tìm kiếm.
-            </div>
-          ) : (
-            filteredOrders.map((order) => {
-              const orderTrips = trips.filter((t) => t.orderId === order.id);
-              const primaryCmds = order.commandIds
-                .map((id) => commands.find((c) => c.id === id))
-                .filter(Boolean);
-
-              return (
-                <div
-                  key={order.id}
-                  className="bg-white dark:bg-industrial-900 border border-slate-200 dark:border-industrial-800 rounded-xl p-4 shadow-sm space-y-4"
-                >
-                  {/* Order Header */}
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 dark:border-industrial-800 pb-3">
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono font-black text-base text-amber-600 dark:text-amber-400">
-                        {order.code}
-                      </span>
-                      <RelationBadge relation={order.relationType} />
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded font-bold ${
-                          order.status === 'COMPLETED'
-                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                            : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
-                        }`}
-                      >
-                        {order.status === 'COMPLETED' ? 'Đã hoàn thành' : 'Đang điều phối'}
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => onAttachVehicle(order.id)}
-                        className="text-xs font-semibold px-2.5 py-1.5 rounded bg-slate-100 dark:bg-industrial-800 hover:bg-slate-200 dark:hover:bg-industrial-700 text-slate-700 dark:text-slate-300 transition"
-                      >
-                        + Bổ sung xe
-                      </button>
-                      {order.status !== 'COMPLETED' && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (window.confirm(`Hoàn tất toàn bộ các chuyến của lệnh ${order.code}?`)) {
-                              completeOrder(order.id);
-                            }
-                          }}
-                          className="text-xs font-bold px-3 py-1.5 rounded bg-emerald-600 hover:bg-emerald-500 text-white transition"
-                        >
-                          Hoàn tất lệnh
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Commands Included */}
-                  <div className="text-xs">
-                    <span className="text-slate-500 font-semibold block mb-1">
-                      Các lệnh thực hiện ({primaryCmds.length}):
-                    </span>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      {primaryCmds.map((cmd) => (
-                        <div
-                          key={cmd?.id}
-                          className="p-2.5 rounded-lg bg-slate-50 dark:bg-industrial-950 border border-slate-200 dark:border-industrial-800 flex justify-between"
-                        >
-                          <div>
-                            <b className="font-mono text-amber-600">{cmd?.code}</b>: {cmd?.material}
-                            <div className="text-[11px] text-slate-500">{cmd?.customer}</div>
-                          </div>
-                          <div className="text-right font-mono">
-                            <span className="font-bold text-emerald-600">{formatWeight(cmd?.completedWeight)}</span>
-                            <span className="text-slate-400"> / {formatWeight(cmd?.targetWeight)}</span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Trucks in this order */}
-                  <div>
-                    <span className="text-xs text-slate-500 font-semibold block mb-2">
-                      Danh sách xe trong lệnh ({orderTrips.length} phương tiện):
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                      {orderTrips.map((trip) => (
-                        <TripCard
-                          key={trip.id}
-                          trip={trip}
-                          onOpenWeighing={onOpenWeighing}
-                          onOpenTicket={onOpenTicket}
-                          onSelectTrip={(t) => setDetailTrip(t)}
-                          onAttachVehicleModal={onAttachVehicle}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+        <DispatchOrderListView
+          orders={filteredOrders}
+          statusFilter={statusFilter}
+          statusLabel={ORDER_STATUS_LABELS[statusFilter]}
+          onOpenWeighing={onOpenWeighing}
+          onOpenTicket={onOpenTicket}
+          onSelectTrip={(t) => setDetailTrip(t)}
+          onAttachVehicle={onAttachVehicle}
+        />
       )}
 
       {/* Trip Detail Modal */}

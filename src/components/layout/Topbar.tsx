@@ -80,7 +80,10 @@ export const Topbar: React.FC<TopbarProps> = ({
     return () => clearInterval(timer);
   }, []);
 
-  const activeTripsCount = trips.filter(t => t.step !== 'COMPLETED').length;
+  // Số XE đang vận hành — đếm PHÂN BIỆT theo vehicleId (tránh đếm trùng khi 1 xe chạy nhiều lệnh N-N)
+  const activeTripsCount = new Set(
+    trips.filter((t) => t.step !== 'COMPLETED').map((t) => t.vehicleId)
+  ).size;
 
   // Admin status check (Admin / VaiTroId=1 / VaiTroId=2)
   const isAdmin = currentUser.VaiTroId === 'ROLE_ADMIN' || 

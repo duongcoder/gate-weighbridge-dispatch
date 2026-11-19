@@ -12,7 +12,10 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 }) => {
   const { activeTab, setActiveTab, trips } = useStore();
   const { hasPermission } = useAuthStore();
-  const activeTripsCount = trips.filter(t => t.step !== 'COMPLETED').length;
+  // Số XE đang vận hành — đếm PHÂN BIỆT theo vehicleId (tránh đếm trùng khi 1 xe chạy nhiều lệnh N-N)
+  const activeTripsCount = new Set(
+    trips.filter((t) => t.step !== 'COMPLETED').map((t) => t.vehicleId)
+  ).size;
 
   const canViewCommands = hasPermission('Frm_Command', 'xem');
   const canViewVehicles = hasPermission('Frm_CardVehicle', 'xem');
