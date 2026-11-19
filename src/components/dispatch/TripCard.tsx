@@ -3,6 +3,7 @@ import { OrderTrip } from '../../types';
 import { useStore } from '../../store/dispatchStore';
 import { formatWeight } from '../../utils/formatters';
 import { Authorize } from '../common/Authorize';
+import { SHOW_FIVE_STEP_PROGRESS } from '../../config/features';
 import { 
   Scale, 
   Printer, 
@@ -137,49 +138,55 @@ export const TripCard: React.FC<TripCardProps> = ({
 
         {/* Primary Action Button */}
         <div>
-          {trip.step === 'SCALE_1' && (
-            <Authorize form="Frm_ScaleCapture" action="sua" mode="disable">
-              <button
-              type="button"
-              onClick={handleWeighClick}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 rounded-lg shadow-sm active:scale-95 transition"
-            >
-              <Scale className="w-3.5 h-3.5" />
-              <span>Cân Lần 1</span>
-            </button>
-            </Authorize>
-          )}
+          {/* Thao tác quy trình (Cân/Tiếp/Hoàn tất) — CHỈ hiển thị khi BẬT tiến trình 5 bước.
+              Khi SHOW_FIVE_STEP_PROGRESS = false: ẨN HOÀN TOÀN (chỉ giữ nút In phiếu bên trái). */}
+          {SHOW_FIVE_STEP_PROGRESS && (
+            <>
+              {trip.step === 'SCALE_1' && (
+                <Authorize form="Frm_ScaleCapture" action="sua" mode="disable">
+                  <button
+                  type="button"
+                  onClick={handleWeighClick}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 rounded-lg shadow-sm active:scale-95 transition"
+                >
+                  <Scale className="w-3.5 h-3.5" />
+                  <span>Cân Lần 1</span>
+                </button>
+                </Authorize>
+              )}
 
-          {trip.step === 'SCALE_2' && (
-            <Authorize form="Frm_ScaleCapture" action="sua" mode="disable">
-              <button
-              type="button"
-              onClick={handleWeighClick}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm active:scale-95 transition"
-            >
-              <Scale className="w-3.5 h-3.5" />
-              <span>Cân Lần 2</span>
-            </button>
-            </Authorize>
-          )}
+              {trip.step === 'SCALE_2' && (
+                <Authorize form="Frm_ScaleCapture" action="sua" mode="disable">
+                  <button
+                  type="button"
+                  onClick={handleWeighClick}
+                  className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg shadow-sm active:scale-95 transition"
+                >
+                  <Scale className="w-3.5 h-3.5" />
+                  <span>Cân Lần 2</span>
+                </button>
+                </Authorize>
+              )}
 
-          {trip.step !== 'SCALE_1' && trip.step !== 'SCALE_2' && trip.step !== 'COMPLETED' && (
-            <Authorize form="Frm_DispatchOrder" action="sua" mode="disable">
-              <button
-              type="button"
-              onClick={handleQuickAdvance}
-              className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-slate-200 dark:hover:bg-industrial-700 text-industrial-900 dark:text-white transition"
-            >
-              <span>Tiếp</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
-            </Authorize>
-          )}
+              {trip.step !== 'SCALE_1' && trip.step !== 'SCALE_2' && trip.step !== 'COMPLETED' && (
+                <Authorize form="Frm_DispatchOrder" action="sua" mode="disable">
+                  <button
+                  type="button"
+                  onClick={handleQuickAdvance}
+                  className="flex items-center gap-1 px-2.5 py-1.5 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-slate-200 dark:hover:bg-industrial-700 text-industrial-900 dark:text-white transition"
+                >
+                  <span>Tiếp</span>
+                  <ArrowRight className="w-3 h-3" />
+                </button>
+                </Authorize>
+              )}
 
-          {trip.step === 'COMPLETED' && (
-            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 rounded">
-              ✓ Hoàn tất
-            </span>
+              {trip.step === 'COMPLETED' && (
+                <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 rounded">
+                  ✓ Hoàn tất
+                </span>
+              )}
+            </>
           )}
         </div>
       </div>

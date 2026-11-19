@@ -4,6 +4,7 @@ import { useStore } from '../../store/dispatchStore';
 import { Modal } from '../common/Modal';
 import { GateStepBadge, RelationBadge } from '../common/Badge';
 import { formatWeight, formatDateTime } from '../../utils/formatters';
+import { SHOW_FIVE_STEP_PROGRESS } from '../../config/features';
 import { 
   Truck, 
   Scale, 
@@ -225,7 +226,7 @@ export const TripDetailModal: React.FC<TripDetailModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {isWeighingStep ? (
+            {(SHOW_FIVE_STEP_PROGRESS && isWeighingStep) ? (
               <button
                 type="button"
                 onClick={() => {
@@ -237,7 +238,7 @@ export const TripDetailModal: React.FC<TripDetailModalProps> = ({
                 <Scale className="w-4 h-4" />
                 <span>{trip.step === 'SCALE_1' ? 'Mở Cửa Sổ Cân Lần 1' : 'Mở Cửa Sổ Cân Lần 2'}</span>
               </button>
-            ) : trip.step !== 'COMPLETED' ? (
+            ) : (SHOW_FIVE_STEP_PROGRESS && trip.step !== 'COMPLETED') ? (
               <button
                 type="button"
                 onClick={handleAdvance}

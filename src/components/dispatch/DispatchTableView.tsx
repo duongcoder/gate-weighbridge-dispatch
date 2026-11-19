@@ -1,5 +1,6 @@
 import React from 'react';
 import { OrderTrip } from '../../types';
+import { SHOW_FIVE_STEP_PROGRESS } from '../../config/features';
 import { useStore } from '../../store/dispatchStore';
 import { formatWeight } from '../../utils/formatters';
 import { Authorize } from '../common/Authorize';
@@ -48,21 +49,23 @@ export const DispatchTableView: React.FC<DispatchTableViewProps> = ({
   return (
     <div className="bg-white dark:bg-industrial-900 rounded-xl border border-slate-200 dark:border-industrial-800 shadow-sm overflow-hidden">
       <div className="overflow-x-auto w-full">
-        <table className="w-full text-left border-collapse text-xs min-w-[950px]">
+        <table className={`w-full text-left border-collapse text-xs ${SHOW_FIVE_STEP_PROGRESS ? 'min-w-[950px]' : 'min-w-[720px]'}`}>
           <thead>
             <tr className="border-b border-slate-200 dark:border-industrial-800 bg-slate-50 dark:bg-industrial-950 text-slate-500 dark:text-slate-400 font-semibold uppercase tracking-wider">
               <th className="p-3 w-40">Biển Số Xe & Lái Xe</th>
               <th className="p-3 w-52">Lệnh & Mặt Hàng</th>
               <th className="p-3 w-28">Nghiệp Vụ</th>
-              <th className="p-3 w-72 text-center">Tiến Trình 5 Bước (Mini Stepper)</th>
+              {SHOW_FIVE_STEP_PROGRESS && (
+                <th className="p-3 w-72 text-center">Tiến Trình 5 Bước (Mini Stepper)</th>
+              )}
               <th className="p-3 w-48 text-center">Số Cân (Lần 1 / 2 / Ròng)</th>
-              <th className="p-3 w-40 text-right">Xử Lý Nhanh</th>
+              <th className={`p-3 text-right ${SHOW_FIVE_STEP_PROGRESS ? 'w-40' : 'w-24'}`}>Xử Lý Nhanh</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-200 dark:divide-industrial-800">
             {trips.length === 0 ? (
               <tr>
-                <td colSpan={6} className="p-8 text-center text-slate-400 dark:text-slate-500">
+                <td colSpan={SHOW_FIVE_STEP_PROGRESS ? 6 : 5} className="p-8 text-center text-slate-400 dark:text-slate-500">
                   Không tìm thấy chuyến xe nào phù hợp.
                 </td>
               </tr>
@@ -114,7 +117,8 @@ export const DispatchTableView: React.FC<DispatchTableViewProps> = ({
                       </span>
                     </td>
 
-                    {/* 4. Mini Stepper */}
+                    {/* 4. Mini Stepper — TẠM ẨN theo cờ SHOW_FIVE_STEP_PROGRESS (src/config/features.ts). Đặt = true để bật lại. */}
+                    {SHOW_FIVE_STEP_PROGRESS && (
                     <td className="p-3">
                       <div className="flex items-center justify-between gap-1 max-w-[280px] mx-auto">
                         {STEP_KEYS.map((key, idx) => {
@@ -147,6 +151,7 @@ export const DispatchTableView: React.FC<DispatchTableViewProps> = ({
                         {STEP_LABELS[currentStepIdx] || 'Hoàn tất'}
                       </div>
                     </td>
+                    )}
 
                     {/* 5. Weight readings */}
                     <td className="p-3 text-center font-mono">
@@ -193,32 +198,36 @@ export const DispatchTableView: React.FC<DispatchTableViewProps> = ({
                         </button>
 
                         {/* Primary Step action */}
-                        {isWeighingStep ? (
-                          <Authorize form="Frm_ScaleCapture" action="sua" mode="disable">
-                            <button
-                            type="button"
-                            onClick={(e) => handleWeighClick(e, trip)}
-                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 rounded-lg shadow-sm transition active:scale-95 ml-1"
-                          >
-                            <Scale className="w-3.5 h-3.5" />
-                            <span>Cân</span>
-                          </button>
-                          </Authorize>
-                        ) : trip.step !== 'COMPLETED' ? (
-                          <Authorize form="Frm_DispatchOrder" action="sua" mode="disable">
-                            <button
-                            type="button"
-                            onClick={(e) => handleQuickAdvance(e, trip.id)}
-                            className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-slate-200 dark:hover:bg-industrial-700 text-industrial-900 dark:text-white transition ml-1"
-                          >
-                            <span>Tiếp</span>
-                            <ArrowRight className="w-3 h-3" />
-                          </button>
-                          </Authorize>
-                        ) : (
-                          <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 rounded ml-1">
-                            ✓ Xong
-                          </span>
+                        {/* Thao tác quy trình (Cân / Tiếp / ✓ Xong) — CHỈ hiển thị khi BẬT tiến trình 5 bước.
+                            Khi SHOW_FIVE_STEP_PROGRESS = false: ẨN HOÀN TOÀN để tránh bấm nhầm (chỉ giữ In phiếu + Xem chi tiết). */}
+                        {SHOW_FIVE_STEP_PROGRESS && (
+                          isWeighingStep ? (
+                            <Authorize form="Frm_ScaleCapture" action="sua" mode="disable">
+                              <button
+                              type="button"
+                              onClick={(e) => handleWeighClick(e, trip)}
+                              className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-white bg-amber-600 hover:bg-amber-500 rounded-lg shadow-sm transition active:scale-95 ml-1"
+                            >
+                              <Scale className="w-3.5 h-3.5" />
+                              <span>Cân</span>
+                            </button>
+                            </Authorize>
+                          ) : trip.step !== 'COMPLETED' ? (
+                            <Authorize form="Frm_DispatchOrder" action="sua" mode="disable">
+                              <button
+                              type="button"
+                              onClick={(e) => handleQuickAdvance(e, trip.id)}
+                              className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold rounded-lg bg-slate-100 dark:bg-industrial-800 hover:bg-slate-200 dark:hover:bg-industrial-700 text-industrial-900 dark:text-white transition ml-1"
+                            >
+                              <span>Tiếp</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </button>
+                            </Authorize>
+                          ) : (
+                            <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/60 rounded ml-1">
+                              ✓ Xong
+                            </span>
+                          )
                         )}
                       </div>
                     </td>

@@ -6,6 +6,7 @@ import { TripDetailModal } from './TripDetailModal';
 import { DispatchTableView } from './DispatchTableView';
 import { RelationBadge } from '../common/Badge';
 import { formatWeight } from '../../utils/formatters';
+import { SHOW_FIVE_STEP_PROGRESS } from '../../config/features';
 import { Authorize } from '../common/Authorize';
 import { 
   Plus, 
@@ -13,6 +14,16 @@ import {
   List, 
   Filter 
 } from 'lucide-react';
+
+/**
+ * Nhãn hiển thị cho bộ lọc "Trạng thái lệnh" (map từ DispatchOrder.status).
+ * Thứ tự khoá = thứ tự option trong dropdown.
+ */
+const ORDER_STATUS_LABELS: Record<string, string> = {
+  ALL: 'Tất cả',
+  ACTIVE: 'Đang chạy',
+  COMPLETED: 'Hoàn thành',
+};
 
 interface DispatchKanbanProps {
   onOpenWizard: () => void;
@@ -29,7 +40,8 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
 }) => {
   const { trips, orders, commands, searchQuery, completeOrder } = useStore();
   const [viewMode, setViewMode] = useState<'TABLE' | 'LIST'>('TABLE');
-  const [relationFilter, setRelationFilter] = useState<string>('ALL');
+  // Bộ lọc Trạng thái lệnh: ALL (Tất cả) | ACTIVE (Đang chạy) | COMPLETED (Hoàn thành)
+  const [statusFilter, setStatusFilter] = useState<string>('ALL');
 
   // Selected trip for full detail modal
   const [detailTrip, setDetailTrip] = useState<OrderTrip | null>(null);
@@ -42,8 +54,8 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
         ? commands.find((c) => c.id === order.commandIds[0])
         : undefined;
 
-      // Relation type filter
-      if (relationFilter !== 'ALL' && order?.relationType !== relationFilter) {
+      // Trạng thái lệnh filter (Đang chạy / Hoàn thành) — áp theo lệnh cha của chuyến
+      if (statusFilter !== 'ALL' && order?.status !== statusFilter) {
         return false;
       }
 
@@ -62,13 +74,13 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
 
       return true;
     });
-  }, [trips, orders, commands, searchQuery, relationFilter]);
+  }, [trips, orders, commands, searchQuery, statusFilter]);
 
   // 2. Filter orders for VIEW 3 (LIST / Gộp Theo Lệnh)
   const filteredOrders = useMemo(() => {
     return orders.filter((order) => {
-      // Filter by relationship
-      if (relationFilter !== 'ALL' && order.relationType !== relationFilter) {
+      // Trạng thái lệnh filter (Đang chạy / Hoàn thành)
+      if (statusFilter !== 'ALL' && order.status !== statusFilter) {
         return false;
       }
 
@@ -103,7 +115,7 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
 
       return true;
     });
-  }, [orders, relationFilter, searchQuery, commands, trips]);
+  }, [orders, statusFilter, searchQuery, commands, trips]);
 
   const activeTripsCount = filteredTrips.filter((t) => t.step !== 'COMPLETED').length;
 
@@ -112,25 +124,25 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
       {/* Top Controls & View Toggle Bar */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-industrial-900 p-3.5 rounded-xl border border-slate-200 dark:border-industrial-800 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
-          {/* Relation Filter */}
+          {/* Trạng thái lệnh Filter (Tất cả / Đang chạy / Hoàn thành) */}
           <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
             <Filter className="w-3.5 h-3.5" />
-            <span>Quan hệ:</span>
+            <span>Trạng thái lệnh:</span>
             <select
-              value={relationFilter}
-              onChange={(e) => setRelationFilter(e.target.value)}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
               className="px-2 py-1 rounded-lg border border-slate-300 dark:border-industrial-700 bg-slate-50 dark:bg-industrial-950 text-xs text-industrial-900 dark:text-white font-medium focus:ring-1 focus:ring-amber-500 focus:outline-none"
             >
-              <option value="ALL">Tất cả (1-1, 1-N, N-1, N-N)</option>
-              <option value="1-1">[1-1] 1 Lệnh - 1 Xe</option>
-              <option value="1-N">[1-N] 1 Lệnh - N Xe</option>
-              <option value="N-1">[N-1] N Lệnh - 1 Xe</option>
-              <option value="N-N">[N-N] N Lệnh - N Xe</option>
+              {Object.entries(ORDER_STATUS_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
             </select>
           </div>
 
           <span className="text-xs px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800 font-bold">
-            {activeTripsCount} xe đang vận hành {relationFilter !== 'ALL' ? `(${filteredOrders.length} lệnh)` : ''}
+            {activeTripsCount} xe đang vận hành {statusFilter !== 'ALL' ? `(${filteredOrders.length} lệnh)` : ''}
           </span>
         </div>
 
@@ -146,7 +158,7 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
                   ? 'bg-white dark:bg-industrial-800 text-amber-600 dark:text-amber-400 shadow-sm'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
-              title="Xem danh sách xe phẳng với thanh tiến trình mini stepper"
+              title={SHOW_FIVE_STEP_PROGRESS ? 'Xem danh sách xe phẳng với thanh tiến trình mini stepper' : 'Xem danh sách xe dạng bảng chi tiết'}
             >
               <TableProperties className="w-3.5 h-3.5" />
               <span>Bảng Danh Sách Xe</span>
@@ -201,7 +213,7 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
         <div className="space-y-4">
           {filteredOrders.length === 0 ? (
             <div className="p-8 text-center text-slate-400 dark:text-slate-500 bg-white dark:bg-industrial-900 rounded-xl border border-slate-200 dark:border-industrial-800">
-              Không tìm thấy lệnh điều phối nào phù hợp với bộ lọc quan hệ ({relationFilter}) hoặc từ khóa tìm kiếm.
+              Không tìm thấy lệnh điều phối nào phù hợp với bộ lọc trạng thái «{ORDER_STATUS_LABELS[statusFilter] ?? statusFilter}» hoặc từ khóa tìm kiếm.
             </div>
           ) : (
             filteredOrders.map((order) => {
