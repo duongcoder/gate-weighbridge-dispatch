@@ -20,6 +20,20 @@ export interface BackendOrderItem {
    *   false = Đang trong trạm (In-Station) — xe đang vận hành
    */
   cardStatus?: boolean;
+
+  // ===== DỮ LIỆU CÂN THỰC TẾ ghép từ dbo.Weighing theo BIỂN SỐ XE — đơn vị TẤN =====
+  /** Lần cân #1 (dbo.Weighing.Mass) */
+  firstWeigh?: number;
+  /** Lần cân #2 (dbo.Weighing.Tare) */
+  secondWeigh?: number;
+  /** Hàng ròng (dbo.Weighing.Net; dự phòng |Mass - Tare|) */
+  netWeight?: number;
+  /** Số phiếu cân (dbo.Weighing.SoHD) */
+  weighTicketNo?: string;
+  weighDate?: string;
+  weighTime?: string;
+  /** Tổng khối lượng đã cân của lệnh (tổng Net các phiếu thuộc lệnh) */
+  commandWeighedTons?: number;
   /** Nhãn trạng thái tương ứng (đồng bộ với tab Quản Lý Lệnh) */
   commandStatusText?: string;
 }

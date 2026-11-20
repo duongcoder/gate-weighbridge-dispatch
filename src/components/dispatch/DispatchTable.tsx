@@ -159,9 +159,17 @@ export const TripTableRow: React.FC<TripTableRowProps> = ({
         </td>
       )}
 
-      {/* 5. Số cân (Lần 1 / 2 / Ròng) */}
+      {/* 5. Số cân (Lần 1 / 2 / Ròng) — nguồn: dbo.Weighing ghép theo BIỂN SỐ XE */}
       <td className="p-3 text-center font-mono">
         <div className="text-[11px] space-y-0.5">
+          {trip.weighTicketNo && (
+            <div
+              className="text-[10px] text-slate-400 truncate max-w-[150px] mx-auto"
+              title={`Phiếu cân ${trip.weighTicketNo} — ${trip.weighDate ?? '--'} ${trip.weighTime ?? ''}`}
+            >
+              Phiếu {trip.weighTicketNo} · {trip.weighDate} {trip.weighTime}
+            </div>
+          )}
           <div className="text-slate-600 dark:text-slate-300">
             #1: <b>{formatWeight(trip.firstWeight)}</b> | #2: <b>{formatWeight(trip.secondWeight)}</b>
           </div>
@@ -170,7 +178,11 @@ export const TripTableRow: React.FC<TripTableRowProps> = ({
               Hàng: {formatWeight(trip.netWeight)}
             </div>
           ) : (
-            <div className="text-[10px] text-slate-400 italic">Chưa chốt hàng ròng</div>
+            <div className="text-[10px] text-slate-400 italic">
+              {trip.firstWeight !== undefined || trip.secondWeight !== undefined
+                ? 'Đã cân 1 lần — chưa chốt hàng ròng'
+                : 'Chưa chốt hàng ròng'}
+            </div>
           )}
         </div>
       </td>

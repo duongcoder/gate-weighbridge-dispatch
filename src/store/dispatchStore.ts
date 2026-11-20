@@ -234,6 +234,8 @@ class DispatchStoreManager {
             createdAt: existingOrder?.createdAt ?? new Date().toISOString(),
             completedAt: isCompleted ? (existingOrder?.completedAt ?? new Date().toISOString()) : undefined,
             notes: existingOrder?.notes ?? `Ghép lệnh ${orderCode}`,
+            // Tổng khối lượng ĐÃ CÂN của lệnh (tổng hàng ròng Net từ dbo.Weighing) — Backend tính sẵn
+            weighedTons: group[0]?.commandWeighedTons ?? 0,
           });
 
           for (const item of group) {
@@ -288,6 +290,21 @@ class DispatchStoreManager {
               trip.netWeight = undefined;
               trip.notes = `Ghép lại xe ${item.bsx} vào lệnh ${orderCode}`;
             }
+
+            // ===== DỮ LIỆU CÂN THỰC TẾ từ dbo.Weighing (đơn vị Tấn) =====
+            // Chỉ ghi đè khi CSDL thực sự CÓ số liệu (tránh xoá giá trị đang có khi thiếu phiếu cân).
+            if (item.firstWeigh !== undefined) {
+              trip.firstWeight = item.firstWeigh;
+              trip.firstWeightTime = trip.firstWeightTime ?? new Date().toISOString();
+            }
+            if (item.secondWeigh !== undefined) {
+              trip.secondWeight = item.secondWeigh;
+              trip.secondWeightTime = trip.secondWeightTime ?? new Date().toISOString();
+            }
+            if (item.netWeight !== undefined) trip.netWeight = item.netWeight;
+            if (item.weighTicketNo) trip.weighTicketNo = item.weighTicketNo;
+            if (item.weighDate) trip.weighDate = item.weighDate;
+            if (item.weighTime) trip.weighTime = item.weighTime;
 
             newTrips.push(trip);
           }

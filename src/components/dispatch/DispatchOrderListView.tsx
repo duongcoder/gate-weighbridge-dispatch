@@ -75,6 +75,12 @@ export const DispatchOrderListView: React.FC<DispatchOrderListViewProps> = ({
                     ? allOrderTrips
                     : allOrderTrips.filter((t) => t.isHistoricalRound === true || t.step === 'COMPLETED'));
 
+              // Khối lượng ĐÃ CÂN của lệnh: ưu tiên TỔNG HÀNG RÒNG NET thực tế từ dbo.Weighing
+              // (Backend trả về trong order.weighedTons — cùng công thức với tab Quản Lý Lệnh);
+              // nếu CSDL cân chưa có số liệu ⇒ dùng giá trị trên dbo.command (tương thích cũ).
+              const weighedTonsOfCommand = (fallbackCompleted?: number) =>
+                Math.max(order.weighedTons ?? 0, fallbackCompleted ?? 0);
+
               const primaryCmds = order.commandIds
                 .map((id) => commands.find((c) => c.id === id))
                 .filter(Boolean);
@@ -156,7 +162,7 @@ export const DispatchOrderListView: React.FC<DispatchOrderListViewProps> = ({
                               <span className="font-semibold text-industrial-900 dark:text-white">{cmd?.material}</span>
                               <span className="text-slate-400">— {cmd?.customer} —</span>
                               <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
-                                {formatWeight(cmd?.completedWeight)}
+                                {formatWeight(weighedTonsOfCommand(cmd?.completedWeight))}
                               </span>
                               <span className="text-slate-400">/ {formatWeight(cmd?.targetWeight)}</span>
                             </span>

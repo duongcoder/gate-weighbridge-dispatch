@@ -56,6 +56,12 @@ export interface OrderTrip {
    * đã bị thay thế bởi một lượt mới hơn ⇒ luôn coi là ĐÃ HOÀN TẤT (lịch sử).
    */
   isHistoricalRound?: boolean;
+  /** Số phiếu cân thực tế (dbo.Weighing.SoHD) — ghép theo biển số xe */
+  weighTicketNo?: string;
+  /** Ngày cân (dbo.Weighing.SumDate) */
+  weighDate?: string;
+  /** Giờ cân (dbo.Weighing.SumTime) */
+  weighTime?: string;
   plateNumber: string;
   driverName: string;
   driverPhone?: string;
@@ -83,6 +89,11 @@ export interface DispatchOrder {
   createdAt: string;
   completedAt?: string;
   notes?: string;
+  /**
+   * Tổng khối lượng ĐÃ CÂN của lệnh (tổng hàng ròng Net từ dbo.Weighing của các xe
+   * đã ghép vào lệnh) — đơn vị Tấn. Dùng cho phần tóm tắt nhóm lệnh.
+   */
+  weighedTons?: number;
 }
 
 export interface ScaleReading {

@@ -22,6 +22,8 @@ export interface BackendCommandItem {
   rate?: number;
   /** Cờ tín hiệu thay đổi lệnh (1 = có thay đổi, 0 = không) do Backend quản lý — KHÔNG phải đơn vị tính */
   unit?: number;
+  /** Tổng khối lượng ĐÃ CÂN thực tế (tổng hàng ròng Net từ dbo.Weighing) — đơn vị Tấn */
+  weighedTons?: number;
   notes?: string;
   createdAt?: string;
 }
@@ -54,7 +56,9 @@ export function mapBackendCommandToFrontend(item: BackendCommandItem): Command {
     seller: item.seller || undefined,
     material: item.material || 'Hàng tổng hợp',
     targetWeight: item.targetWeight ?? 0,
-    completedWeight: item.completedWeight ?? 0,
+    // Khối lượng ĐÃ CÂN: lấy giá trị LỚN HƠN giữa dbo.command.Weigh và tổng hàng ròng Net
+    // thực tế từ dbo.Weighing (cùng công thức với tab Điều Phối Ghép Lệnh).
+    completedWeight: Math.max(item.completedWeight ?? 0, item.weighedTons ?? 0),
     status: (item.status as CommandStatus) || 'Không kích hoạt',
     notes: item.notes || '',
     createdAt: item.createdAt || new Date().toISOString(),
