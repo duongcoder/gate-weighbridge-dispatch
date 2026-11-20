@@ -24,6 +24,21 @@ import {
 /** Xe đang vận hành = chuyến chưa hoàn tất (tương ứng Card.Status = false / TRONG TRẠM) */
 const isTripRunning = (trip: OrderTrip): boolean => trip.step !== 'COMPLETED';
 
+/**
+ * Các LƯỢT thuộc LỊCH SỬ HOÀN THÀNH của một lệnh điều phối:
+ *  • Lệnh ĐÃ hoàn thành (dbo.command.Status = 2) → TOÀN BỘ xe/lượt của lệnh đó.
+ *  • Lệnh còn ĐANG CHẠY:
+ *      - LƯỢT LỊCH SỬ (dòng dbo.Order cũ bị lượt mới hơn thay thế) ⇒ luôn thuộc lịch sử.
+ *      - LƯỢT HIỆN TẠI đã kết thúc (chuyến đã COMPLETED / xe đã rời trạm) ⇒ vào lịch sử
+ *        NGAY khi xe xong lượt, KHÔNG chờ cả lệnh đóng ⇒ số lượt tăng LIỀN MẠCH (6 → 7),
+ *        không bị thu hẹp rồi nhảy vọt khi lệnh mở chạy lại.
+ */
+const historyTripsOf = (allTrips: OrderTrip[], orderId: string, orderCompleted: boolean): OrderTrip[] => {
+  const groupTrips = allTrips.filter((t) => t.orderId === orderId);
+  if (orderCompleted) return groupTrips;
+  return groupTrips.filter((t) => t.isHistoricalRound === true || t.step === 'COMPLETED');
+};
+
 /** Nhãn hiển thị cho bộ lọc (map từ DispatchOrder.status). Thứ tự khoá = thứ tự option. */
 const ORDER_STATUS_LABELS: Record<string, string> = {
   ACTIVE: 'Đang chạy',
@@ -69,7 +84,11 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
         if (order?.status !== 'ACTIVE' || !isTripRunning(trip)) {
           return false;
         }
-      } else if (order?.status !== 'COMPLETED') {
+      } else if (
+        order?.status !== 'COMPLETED' &&
+        trip.isHistoricalRound !== true &&
+        trip.step !== 'COMPLETED'
+      ) {
         return false;
       }
 
@@ -103,7 +122,7 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
         if (order.status !== 'ACTIVE' || !groupTrips.some(isTripRunning)) {
           return false;
         }
-      } else if (order.status !== 'COMPLETED') {
+      } else if (historyTripsOf(trips, order.id, order.status === 'COMPLETED').length === 0) {
         return false;
       }
 
@@ -146,8 +165,10 @@ export const DispatchKanban: React.FC<DispatchKanbanProps> = ({
     () =>
       filteredOrders.reduce((sum, order) => {
         const groupTrips = trips.filter((t) => t.orderId === order.id);
-        // Đang chạy: chỉ đếm xe đang vận hành • Lịch sử: đếm TOÀN BỘ xe của lệnh đã hoàn thành
-        const shown = statusFilter === 'ACTIVE' ? groupTrips.filter(isTripRunning) : groupTrips;
+        // Đang chạy: đếm xe đang vận hành • Lịch sử: đếm các LƯỢT thuộc lịch sử hoàn thành
+        const shown = statusFilter === 'ACTIVE'
+          ? groupTrips.filter(isTripRunning)
+          : historyTripsOf(trips, order.id, order.status === 'COMPLETED');
         return sum + shown.length;
       }, 0),
     [filteredOrders, trips, statusFilter]

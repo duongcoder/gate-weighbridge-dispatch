@@ -32,8 +32,9 @@ interface DispatchOrderListViewProps {
  * Hai chế độ hiển thị (theo prop `statusFilter`):
  *   - ACTIVE    (Đang chạy): CHỈ lệnh đang chạy + CHỈ xe đang vận hành (trong trạm);
  *                            vẫn có nút "+ Bổ sung xe" / "Hoàn tất lệnh".
- *   - COMPLETED (Hoàn thành): chế độ LỊCH SỬ — chỉ lệnh đã hoàn thành, hiển thị toàn bộ xe
- *                            đã tham gia, tiêu đề ghi "N xe • Lịch sử hoàn thành",
+ *   - COMPLETED (Hoàn thành): chế độ LỊCH SỬ — hiển thị MỌI LƯỢT ĐÃ KẾT THÚC:
+ *                            lệnh đã hoàn thành (toàn bộ lượt) HOẶC lượt cũ + lượt hiện tại đã xong
+ *                            của lệnh còn chạy; tiêu đề "N lượt • Lịch sử hoàn thành";
  *                            ẨN các nút thao tác điều phối.
  */
 export const DispatchOrderListView: React.FC<DispatchOrderListViewProps> = ({
@@ -63,14 +64,16 @@ export const DispatchOrderListView: React.FC<DispatchOrderListViewProps> = ({
             </tbody>
           ) : (
             orders.map((order) => {
-              // LỌC THEO CHẾ ĐỘ:
-              //   - Đang chạy  → chỉ xe ĐANG vận hành (chuyến chưa hoàn tất / Card.Status = false)
-              //   - Hoàn thành → LỊCH SỬ: toàn bộ xe đã tham gia lệnh đã hoàn thành
-              // Số xe ở tiêu đề nhóm ({orderTrips.length} xe) luôn khớp với danh sách hiển thị.
+              // LỌC THEO CHẾ ĐỘ (LỊCH SỬ THEO LƯỢT):
+              //   - Đang chạy  → chỉ LƯỢT HIỆN TẠI đang vận hành (chuyến chưa hoàn tất)
+              //   - Hoàn thành → lệnh ĐÃ hoàn thành: TOÀN BỘ lượt; lệnh còn chạy: chỉ các LƯỢT LỊCH SỬ
+              // Số lượt ở tiêu đề nhóm luôn khớp với danh sách hiển thị.
               const allOrderTrips = trips.filter((t) => t.orderId === order.id);
               const orderTrips = statusFilter === 'ACTIVE'
                 ? allOrderTrips.filter((t) => t.step !== 'COMPLETED')
-                : allOrderTrips;
+                : (order.status === 'COMPLETED'
+                    ? allOrderTrips
+                    : allOrderTrips.filter((t) => t.isHistoricalRound === true || t.step === 'COMPLETED'));
 
               const primaryCmds = order.commandIds
                 .map((id) => commands.find((c) => c.id === id))
@@ -90,17 +93,23 @@ export const DispatchOrderListView: React.FC<DispatchOrderListViewProps> = ({
                             <span className="font-mono font-black text-sm text-amber-600 dark:text-amber-400">
                               {order.code}
                             </span>
+                            {/* Ở chế độ LỊCH SỬ luôn hiển thị "Đã hoàn thành" vì nhóm chỉ chứa
+                                các lượt đã kết thúc (kể cả khi lệnh đang chạy lại lượt mới). */}
                             <span
                               className={`text-[11px] px-2 py-0.5 rounded font-bold ${
-                                order.status === 'COMPLETED'
+                                statusFilter === 'COMPLETED' || order.status === 'COMPLETED'
                                   ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
                                   : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
                               }`}
                             >
-                              {order.status === 'COMPLETED' ? 'Đã hoàn thành' : 'Đang điều phối'}
+                              {statusFilter === 'COMPLETED' || order.status === 'COMPLETED'
+                                ? 'Đã hoàn thành'
+                                : 'Đang điều phối'}
                             </span>
                             <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">
-                              {orderTrips.length} xe{statusFilter === 'COMPLETED' ? ' • Lịch sử hoàn thành' : ''}
+                              {statusFilter === 'COMPLETED'
+                                ? `${orderTrips.length} lượt • Lịch sử hoàn thành`
+                                : `${orderTrips.length} xe`}
                             </span>
                             {statusFilter === 'ACTIVE' && (
                               <span className="text-[11px] italic text-slate-400 dark:text-slate-500">
@@ -109,10 +118,9 @@ export const DispatchOrderListView: React.FC<DispatchOrderListViewProps> = ({
                             )}
                           </div>
 
-                          {/* Thao tác điều phối CHỈ hiển thị với lệnh CHƯA hoàn thành (chế độ Đang chạy).
-                              Ở chế độ Hoàn thành (LỊCH SỬ) → ẩn cả "+ Bổ sung xe" lẫn "Hoàn tất lệnh"
-                              để không gây cảm giác lệnh đang điều phối dở. */}
-                          {order.status !== 'COMPLETED' && (
+                          {/* Thao tác điều phối CHỈ hiển thị ở chế độ ĐANG CHẠY với lệnh chưa hoàn thành.
+                              Ở chế độ Hoàn thành (LỊCH SỬ) → ẩn cả "+ Bổ sung xe" lẫn "Hoàn tất lệnh". */}
+                          {statusFilter === 'ACTIVE' && order.status !== 'COMPLETED' && (
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"

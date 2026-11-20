@@ -193,6 +193,15 @@ class DispatchStoreManager {
         const existingTripsById = new Map(this.trips.map((t) => [t.id, t]));
         const existingOrdersById = new Map(this.orders.map((o) => [o.id, o]));
 
+        // LỊCH SỬ THEO LƯỢT: Id dòng dbo.Order LỚN NHẤT của mỗi cặp (CommandId, CardId) = LƯỢT HIỆN TẠI;
+        // các dòng cũ hơn cùng cặp = LƯỢT LỊCH SỬ (đã kết thúc) ⇒ luôn hiển thị là đã hoàn thành.
+        const latestRowIdByPair = new Map<string, number>();
+        for (const o of remoteOrders) {
+          const pairKey = `${o.commandId}::${o.idCard}`;
+          const prev = latestRowIdByPair.get(pairKey);
+          if (prev === undefined || o.id > prev) latestRowIdByPair.set(pairKey, o.id);
+        }
+
         orderMap.forEach((group, cmdId) => {
           const matchedCmd = this.commands.find((c) => c.id === cmdId.toString());
           const orderId = `dsp-cmd-${cmdId}`;
@@ -233,73 +242,62 @@ class DispatchStoreManager {
             const tripId = `trip-${item.id}`;
             const existingTrip = options.preserveProgress ? existingTripsById.get(tripId) : undefined;
 
-            // ĐỒNG BỘ 2 CHIỀU (DB ➔ Web): trạng thái THỰC TẾ của xe lấy từ dbo.Card.Status
-            //   Card.Status = true  → xe Rảnh (Sẵn sàng), đã rời trạm ⇒ CHUYẾN ĐÃ HOÀN TẤT
-            //   Card.Status = false → xe đang TRONG TRẠM               ⇒ chuyến đang vận hành
-            // Nhờ đó KHÔNG bị "giữ cứng" trip.step = 'GATE_IN' chỉ vì lệnh cha còn ACTIVE,
-            // nên bộ lọc "Đang chạy" ở tab Điều Phối chỉ hiện đúng các xe đang vận hành.
-            const isVehicleReleased = item.cardStatus === true;
+            // LỊCH SỬ THEO LƯỢT: mỗi dòng dbo.Order = 1 LƯỢT ghép. Lượt có Id LỚN NHẤT của mỗi cặp
+            // (CardId, CommandId) là LƯỢT HIỆN TẠI; các dòng cũ hơn là LƯỢT LỊCH SỬ.
+            const isHistoricalRound = latestRowIdByPair.get(`${cmdId}::${item.idCard}`) !== item.id;
 
-            if (isVehicleReleased) {
-              const completedTrip: OrderTrip = existingTrip
-                ? {
-                    ...existingTrip,
-                    step: 'COMPLETED',
-                    completedTime: existingTrip.completedTime ?? new Date().toISOString(),
-                  }
-                : {
-                    id: tripId,
-                    orderId,
-                    vehicleId: vId,
-                    plateNumber: item.bsx || veh?.plateNumber || 'UNKNOWN',
-                    driverName: item.nameUser || veh?.driverName || 'Tài xế vãng lai',
-                    driverPhone: veh?.driverPhone,
-                    transportCompany: item.sortCar || veh?.transportCompany || 'Đội xe nội bộ',
-                    step: 'COMPLETED',
-                    completedTime: new Date().toISOString(),
-                    notes: `Chuyến ghép xe ${item.bsx} vào lệnh ${orderCode}`,
-                  };
+            const baseTrip: OrderTrip = existingTrip ?? {
+              id: tripId,
+              orderId,
+              vehicleId: vId,
+              plateNumber: item.bsx || veh?.plateNumber || 'UNKNOWN',
+              driverName: item.nameUser || veh?.driverName || 'Tài xế vãng lai',
+              driverPhone: veh?.driverPhone,
+              transportCompany: item.sortCar || veh?.transportCompany || 'Đội xe nội bộ',
+              step: 'GATE_IN',
+              notes: `Chuyến ghép xe ${item.bsx} vào lệnh ${orderCode}`,
+            };
 
-              newTrips.push(completedTrip);
+            // Object MỚI (spread) — không sửa trực tiếp chuyến đang có trong store
+            const trip: OrderTrip = { ...baseTrip, orderRowId: item.id, isHistoricalRound };
+
+            if (isHistoricalRound) {
+              // LƯỢT LỊCH SỬ (đã bị lượt mới hơn thay thế) ⇒ LUÔN HOÀN TẤT
+              trip.step = 'COMPLETED';
+              trip.completedTime = trip.completedTime ?? new Date().toISOString();
+            } else if (item.cardStatus === true) {
+              // Lượt hiện tại: xe đã rời trạm (Rảnh - Sẵn sàng) ⇒ HOÀN TẤT
+              trip.step = 'COMPLETED';
+              trip.completedTime = trip.completedTime ?? new Date().toISOString();
             } else if (existingTrip && existingTrip.step !== 'COMPLETED') {
               // Xe đang vận hành (chuyến chưa hoàn tất) → giữ nguyên tiến trình & khối lượng cân
-              newTrips.push(existingTrip);
+              trip.step = existingTrip.step;
             } else if (existingTrip && item.cardStatus !== false) {
               // Không có tín hiệu rõ ràng từ DB (xe vãng lai / thiếu dòng dbo.Card) → giữ nguyên
-              newTrips.push(existingTrip);
+              trip.step = existingTrip.step;
             } else {
-              // Xe ĐANG TRONG TRẠM (Card.Status = false) NHƯNG chuyến cũ đã COMPLETED
-              // ⇒ trường hợp GHÉP LẠI một xe đã từng chạy ở lệnh này: khởi tạo lại chuyến
-              //    đang vận hành và XÓA dữ liệu cân của lần chạy trước.
-              newTrips.push({
-                id: tripId,
-                orderId,
-                vehicleId: vId,
-                plateNumber: item.bsx || veh?.plateNumber || 'UNKNOWN',
-                driverName: item.nameUser || veh?.driverName || 'Tài xế vãng lai',
-                driverPhone: veh?.driverPhone,
-                transportCompany: item.sortCar || veh?.transportCompany || 'Đội xe nội bộ',
-                step: 'GATE_IN',
-                notes: `Ghép lại xe ${item.bsx} vào lệnh ${orderCode}`,
-              });
+              // Xe ĐANG TRONG TRẠM (Card.Status = false) nhưng chuyến cũ đã COMPLETED
+              // ⇒ GHÉP LẠI một xe đã từng chạy ở lệnh này: khởi tạo LƯỢT MỚI đang vận hành
+              //    và XÓA dữ liệu cân của lần chạy trước.
+              trip.step = 'GATE_IN';
+              trip.completedTime = undefined;
+              trip.firstWeight = undefined;
+              trip.firstWeightTime = undefined;
+              trip.secondWeight = undefined;
+              trip.secondWeightTime = undefined;
+              trip.netWeight = undefined;
+              trip.notes = `Ghép lại xe ${item.bsx} vào lệnh ${orderCode}`;
             }
+
+            newTrips.push(trip);
           }
         });
 
-        // LÀM SẠCH: Backend trả ORDER BY Id DESC ⇒ bản ghi ĐẦU TIÊN của mỗi cặp
-        // (orderId, vehicleId) là MỚI NHẤT; loại bỏ mọi chuyến trùng để không hiển thị 2 lần.
-        const dedupedTrips: OrderTrip[] = [];
-        const seenTripPairs = new Set<string>();
-        for (const t of newTrips) {
-          const pairKey = `${t.orderId}::${t.vehicleId}`;
-          if (seenTripPairs.has(pairKey)) continue;
-          seenTripPairs.add(pairKey);
-          dedupedTrips.push(t);
-        }
-
+        // LỊCH SỬ THEO LƯỢT: GIỮ NGUYÊN tất cả các chuyến — mỗi dòng dbo.Order là 1 lượt,
+        // trip.id = `trip-{Order.Id}` nên KHÔNG trùng key giữa các lượt khác nhau.
         // Luôn gán (kể cả rỗng) để phản ánh đúng dữ liệu dbo.Order hiện có trong CSDL.
         this.orders = newOrders;
-        this.trips = dedupedTrips;
+        this.trips = newTrips;
         saveStorage(STORAGE_KEYS.ORDERS, this.orders);
         saveStorage(STORAGE_KEYS.TRIPS, this.trips);
       }
@@ -737,7 +735,9 @@ class DispatchStoreManager {
         const cardNum = Number(trip.vehicleId);
         const cmdNum = Number(primaryCmdId);
         if (!isNaN(cardNum) && !isNaN(cmdNum)) {
-          await orderApi.detachVehicle({ cardId: cardNum, commandId: cmdNum });
+          // TÁCH THEO LƯỢT: chỉ xoá ĐÚNG LƯỢT đang thao tác (theo dbo.Order.Id),
+          // GIỮ NGUYÊN các lượt lịch sử khác của cùng cặp xe–lệnh.
+          await orderApi.detachVehicle({ cardId: cardNum, commandId: cmdNum, orderId: trip.orderRowId });
         }
       } catch (err) {
         console.warn('Lỗi gọi API detachVehicle:', err);

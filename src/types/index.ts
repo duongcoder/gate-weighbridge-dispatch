@@ -49,6 +49,13 @@ export interface OrderTrip {
   id: string;
   orderId: string;
   vehicleId: string;
+  /** Id bản ghi dbo.Order tương ứng LƯỢT ghép này (mỗi lượt = 1 dòng dbo.Order) */
+  orderRowId?: number;
+  /**
+   * true = LƯỢT LỊCH SỬ — bản ghi dbo.Order cũ hơn của cùng cặp (CardId, CommandId),
+   * đã bị thay thế bởi một lượt mới hơn ⇒ luôn coi là ĐÃ HOÀN TẤT (lịch sử).
+   */
+  isHistoricalRound?: boolean;
   plateNumber: string;
   driverName: string;
   driverPhone?: string;

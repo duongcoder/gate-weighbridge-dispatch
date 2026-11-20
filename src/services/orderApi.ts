@@ -50,6 +50,8 @@ export interface AttachPayload {
 export interface DetachPayload {
   cardId: number;
   commandId: number;
+  /** Id bản ghi dbo.Order của LƯỢT cần tách (giữ nguyên các lượt lịch sử khác của cùng cặp) */
+  orderId?: number;
 }
 
 export interface BatchDispatchPayload {
